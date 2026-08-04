@@ -251,6 +251,9 @@
     .source-body a { color: var(--blue); overflow-wrap: anywhere; }
     .source-body p { margin: .4rem 0; }
     .source-list .source-code { color: var(--forest-2); font-weight: 900; margin-right: .4rem; }
+    .glossary-term { position: relative; display: inline-block; border-bottom: 1px dotted currentColor; cursor: help; }
+    .glossary-term::after { content: attr(data-tip); position: absolute; z-index: 30; right: 0; top: calc(100% + 8px); width: min(310px, calc(100vw - 2rem)); padding: .65rem .75rem; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); font-size: .76rem; font-weight: 550; line-height: 1.4; text-align: left; opacity: 0; pointer-events: none; transform: translateY(-3px); transition: opacity .16s ease, transform .16s ease; }
+    .glossary-term:hover::after, .glossary-term:focus::after { opacity: 1; transform: translateY(0); }
     .gap-block { margin-top: 25px; padding-top: 19px; border-top: 1px solid var(--line-strong); }
     .gap-block h3 { font-family: Georgia, "Times New Roman", serif; font-size: 1.45rem; color: var(--forest); }
     .gap-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 15px; border-top: 1px solid var(--line); }
@@ -624,6 +627,52 @@
           next.focus();
           updateChain(next);
         });
+      });
+
+      const glossary = {
+        'FAOSTAT': 'FAO’s Corporate Statistical Database, the United Nations food and agriculture data platform.',
+        'FAO': 'Food and Agriculture Organization of the United Nations.',
+        'QCL': 'FAOSTAT dataset code for Crops and livestock products.',
+        'USDA/FAS': 'United States Department of Agriculture / Foreign Agricultural Service, which publishes country market reports.',
+        'USDA': 'United States Department of Agriculture.',
+        'FAS': 'Foreign Agricultural Service, an office of the United States Department of Agriculture.',
+        'INSAI': 'Instituto Nacional de Salud Agrícola Integral, Venezuela’s agricultural and animal-health authority.',
+        'SIGESAI': 'Sistema de Información, Gestión y Estadística de la Salud Agrícola Integral, Venezuela’s system for movement permits and related certificates.',
+        'OFAC': 'Office of Foreign Assets Control, the U.S. Treasury office that administers sanctions.',
+        'SENIAT': 'Venezuela’s tax and customs authority.',
+        'DOI': 'Digital Object Identifier, a persistent identifier for a publication or other research object.',
+        'Fedenaga': 'Federación Nacional de Ganaderos de Venezuela, a livestock-industry association.'
+      };
+      const glossaryPattern = new RegExp(Object.keys(glossary).sort((a, b) => b.length - a.length).map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+      const glossaryWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      const glossaryNodes = [];
+      while (glossaryWalker.nextNode()) glossaryNodes.push(glossaryWalker.currentNode);
+      glossaryNodes.forEach((node) => {
+        const parent = node.parentElement;
+        if (!parent || ['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION'].includes(parent.tagName) || parent.closest('.glossary-term')) return;
+        const value = node.nodeValue;
+        glossaryPattern.lastIndex = 0;
+        let match;
+        let lastIndex = 0;
+        let found = false;
+        const fragment = document.createDocumentFragment();
+        while ((match = glossaryPattern.exec(value)) !== null) {
+          found = true;
+          fragment.append(value.slice(lastIndex, match.index));
+          const term = match[0];
+          const marker = document.createElement('span');
+          marker.className = 'glossary-term';
+          marker.tabIndex = 0;
+          marker.title = glossary[term];
+          marker.dataset.tip = glossary[term];
+          marker.setAttribute('aria-label', term + ': ' + glossary[term]);
+          marker.textContent = term;
+          fragment.append(marker);
+          lastIndex = match.index + term.length;
+        }
+        if (!found) return;
+        fragment.append(value.slice(lastIndex));
+        node.replaceWith(fragment);
       });
     }());
   </script>
