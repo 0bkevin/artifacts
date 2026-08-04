@@ -252,8 +252,8 @@
     .source-body p { margin: .4rem 0; }
     .source-list .source-code { color: var(--forest-2); font-weight: 900; margin-right: .4rem; }
     .glossary-term { position: relative; display: inline-block; border-bottom: 1px dotted currentColor; cursor: help; }
-    .glossary-term::after { content: attr(data-tip); position: absolute; z-index: 30; right: 0; top: calc(100% + 8px); width: min(310px, calc(100vw - 2rem)); padding: .65rem .75rem; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--panel); color: var(--ink); box-shadow: var(--shadow); font-size: .76rem; font-weight: 550; line-height: 1.4; text-align: left; opacity: 0; pointer-events: none; transform: translateY(-3px); transition: opacity .16s ease, transform .16s ease; }
-    .glossary-term:hover::after, .glossary-term:focus::after { opacity: 1; transform: translateY(0); }
+    .glossary-tooltip { position: fixed; z-index: 60; width: min(320px, calc(100vw - 2rem)); padding: .7rem .8rem; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--forest); color: #f4fbf1; box-shadow: var(--shadow); font-size: .8rem; font-weight: 600; line-height: 1.45; text-align: left; white-space: normal; overflow-wrap: anywhere; opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(-4px); transition: opacity .14s ease, transform .14s ease, visibility .14s ease; }
+    .glossary-tooltip.is-visible { opacity: 1; visibility: visible; transform: translateY(0); }
     .gap-block { margin-top: 25px; padding-top: 19px; border-top: 1px solid var(--line-strong); }
     .gap-block h3 { font-family: Georgia, "Times New Roman", serif; font-size: 1.45rem; color: var(--forest); }
     .gap-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); margin-top: 15px; border-top: 1px solid var(--line); }
@@ -644,6 +644,37 @@
         'Fedenaga': 'Federación Nacional de Ganaderos de Venezuela, a livestock-industry association.'
       };
       const glossaryPattern = new RegExp(Object.keys(glossary).sort((a, b) => b.length - a.length).map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+      const glossaryTooltip = document.createElement('div');
+      glossaryTooltip.className = 'glossary-tooltip';
+      glossaryTooltip.id = 'glossary-tooltip';
+      glossaryTooltip.setAttribute('role', 'tooltip');
+      document.body.append(glossaryTooltip);
+      let activeGlossaryTerm = null;
+      const positionGlossaryTooltip = () => {
+        if (!activeGlossaryTerm) return;
+        const rect = activeGlossaryTerm.getBoundingClientRect();
+        const margin = 16;
+        const gap = 10;
+        const width = Math.min(320, window.innerWidth - (margin * 2));
+        glossaryTooltip.style.width = width + 'px';
+        const left = Math.min(Math.max(margin, rect.left), window.innerWidth - width - margin);
+        glossaryTooltip.style.left = left + 'px';
+        const height = glossaryTooltip.offsetHeight;
+        const below = rect.bottom + gap;
+        const top = below + height <= window.innerHeight - margin ? below : Math.max(margin, rect.top - height - gap);
+        glossaryTooltip.style.top = top + 'px';
+      };
+      const showGlossaryTooltip = (term) => {
+        activeGlossaryTerm = term;
+        glossaryTooltip.textContent = term.dataset.tip;
+        glossaryTooltip.classList.add('is-visible');
+        positionGlossaryTooltip();
+      };
+      const hideGlossaryTooltip = () => {
+        activeGlossaryTerm = null;
+        glossaryTooltip.classList.remove('is-visible');
+      };
+      window.addEventListener('resize', positionGlossaryTooltip);
       const glossaryWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       const glossaryNodes = [];
       while (glossaryWalker.nextNode()) glossaryNodes.push(glossaryWalker.currentNode);
@@ -665,8 +696,12 @@
           marker.tabIndex = 0;
           marker.title = glossary[term];
           marker.dataset.tip = glossary[term];
-          marker.setAttribute('aria-label', term + ': ' + glossary[term]);
+          marker.setAttribute('aria-describedby', 'glossary-tooltip');
           marker.textContent = term;
+          marker.addEventListener('mouseenter', () => showGlossaryTooltip(marker));
+          marker.addEventListener('mouseleave', hideGlossaryTooltip);
+          marker.addEventListener('focus', () => showGlossaryTooltip(marker));
+          marker.addEventListener('blur', hideGlossaryTooltip);
           fragment.append(marker);
           lastIndex = match.index + term.length;
         }
