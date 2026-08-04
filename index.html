@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Editorial explorer of Venezuela's livestock and agricultural market: FAO data, production geography, value chain, and regulation.">
+  <title>Venezuela Livestock · Market Explorer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #13211f;
+      --muted: #61716d;
+      --paper: #f5f6f0;
+      --card: rgba(255,255,252,.86);
+      --card-strong: #fffefa;
+      --line: #dbe2d8;
+      --line-strong: #c6d2c5;
+      --forest: #123d38;
+      --forest-2: #1e5d55;
+      --mint: #d5f1df;
+      --mint-strong: #55c596;
+      --coral: #e87458;
+      --sun: #f0bc4d;
+      --blue: #3f8fa4;
+      --shadow: 0 18px 48px rgba(18,61,56,.10);
+      --radius: 20px;
+      --radius-sm: 12px;
+      --max: 1420px;
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #e8f0e8;
+      --muted: #aabbb3;
+      --paper: #0e1d1b;
+      --card: rgba(22,43,39,.88);
+      --card-strong: #17332f;
+      --line: #294943;
+      --line-strong: #3b6259;
+      --forest: #c8f0d3;
+      --forest-2: #8eddb2;
+      --mint: #214e43;
+      --mint-strong: #67d6a1;
+      --coral: #ff8e6f;
+      --sun: #f3c967;
+      --blue: #71c3d1;
+      --shadow: 0 18px 48px rgba(0,0,0,.24);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 88% 2%, rgba(240,188,77,.16), transparent 26rem),
+        radial-gradient(circle at 4% 20%, rgba(85,197,150,.11), transparent 24rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+    .skip-link {
+      position: fixed; left: 1rem; top: .75rem; z-index: 50;
+      transform: translateY(-150%); background: var(--sun); color: #17231f;
+      padding: .65rem 1rem; border-radius: 999px; font-weight: 800;
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .hero-wrap { padding: 22px 22px 0; }
+    .hero {
+      position: relative; overflow: hidden; max-width: var(--max); margin: 0 auto;
+      min-height: 520px; padding: clamp(25px, 5vw, 72px);
+      display: flex; flex-direction: column; justify-content: space-between;
+      border-radius: 30px; color: #f4fbf1;
+      background: linear-gradient(120deg, #0d302c 0%, #145047 52%, #1a6554 100%);
+      box-shadow: var(--shadow);
+      isolation: isolate;
+    }
+    .hero::before, .hero::after { content: ""; position: absolute; z-index: -1; border-radius: 50%; filter: blur(1px); }
+    .hero::before { width: 490px; height: 490px; right: -120px; top: -230px; border: 1px solid rgba(213,241,223,.28); box-shadow: 0 0 0 50px rgba(213,241,223,.04), 0 0 0 105px rgba(213,241,223,.035); }
+    .hero::after { width: 330px; height: 330px; left: 44%; bottom: -250px; background: rgba(240,188,77,.13); }
+    .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 2rem; }
+    .eyebrow, .kicker { text-transform: uppercase; letter-spacing: .15em; font-size: .72rem; font-weight: 850; }
+    .eyebrow { color: #b5e5c5; margin: 0 0 1rem; }
+    .hero h1 { max-width: 900px; margin: 0; font-size: clamp(2.8rem, 7vw, 7rem); line-height: .95; letter-spacing: -.065em; font-weight: 900; }
+    .hero h1 em { color: var(--sun); font-style: normal; }
+    .hero-dek { max-width: 660px; margin: 1.5rem 0 0; font-size: clamp(1rem, 1.5vw, 1.28rem); color: #d6e7db; }
+    .hero-stamp { flex: 0 0 auto; display: flex; align-items: center; gap: .6rem; color: #d6e7db; font-size: .8rem; border: 1px solid rgba(213,241,223,.3); padding: .6rem .8rem; border-radius: 999px; backdrop-filter: blur(8px); }
+    .hero-stamp i { width: 8px; height: 8px; display: block; border-radius: 50%; background: var(--mint-strong); box-shadow: 0 0 0 5px rgba(85,197,150,.16); }
+    .hero-bottom { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 2rem; }
+    .hero-note { display: flex; gap: 1rem; align-items: flex-start; max-width: 680px; color: #c6dbcf; font-size: .85rem; }
+    .hero-note strong { color: #fff; }
+    .hero-mark { width: 64px; height: 64px; display: grid; place-items: center; flex: 0 0 64px; background: var(--sun); color: var(--forest); border-radius: 18px; font-size: 2rem; transform: rotate(-4deg); }
+    .hero-actions { display: flex; gap: .65rem; flex-wrap: wrap; justify-content: flex-end; }
+    .pill-btn { border: 1px solid rgba(255,255,255,.28); color: #f4fbf1; background: rgba(255,255,255,.08); padding: .72rem 1rem; border-radius: 999px; font-weight: 800; font-size: .84rem; transition: .2s ease; }
+    .pill-btn:hover { background: rgba(255,255,255,.18); transform: translateY(-2px); }
+    .layout { max-width: var(--max); margin: 0 auto; padding: 36px 22px 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 38px; align-items: start; }
+    .side { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 1rem; }
+    .side-box { border: 1px solid var(--line); background: var(--card); border-radius: 16px; padding: 1rem; box-shadow: 0 8px 22px rgba(18,61,56,.045); }
+    .side-title { margin: 0 0 .7rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .13em; color: var(--muted); font-weight: 900; }
+    .section-nav { display: grid; gap: .22rem; }
+    .section-nav a { position: relative; padding: .5rem .7rem; color: var(--muted); text-decoration: none; font-weight: 750; font-size: .84rem; border-radius: 9px; transition: .18s; }
+    .section-nav a:hover, .section-nav a.active { background: var(--mint); color: var(--forest); }
+    .section-nav a.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: var(--coral); border-radius: 3px; }
+    .confidence-key { display: grid; gap: .55rem; font-size: .77rem; color: var(--muted); }
+    .confidence-key span { display: flex; align-items: center; gap: .45rem; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 9px; }
+    .dot.high { background: var(--mint-strong); } .dot.mid { background: var(--sun); } .dot.low { background: var(--coral); }
+    .content { min-width: 0; }
+    .section { scroll-margin-top: 25px; margin-bottom: 72px; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 1.25rem; margin-bottom: 22px; }
+    .section-head > div { min-width: 0; }
+    .kicker { color: var(--coral); margin: 0 0 .45rem; }
+    h2 { margin: 0; max-width: 780px; font-size: clamp(1.75rem, 3.4vw, 3.35rem); line-height: 1; letter-spacing: -.045em; }
+    h3 { margin: 0; line-height: 1.1; letter-spacing: -.02em; }
+    .lede { max-width: 670px; color: var(--muted); margin: .7rem 0 0; font-size: 1rem; }
+    .eyebrow + h2 { margin-top: 0; }
+    .meta-line { color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .grid { display: grid; gap: 14px; }
+    .grid-4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(17px, 2vw, 26px); box-shadow: 0 8px 25px rgba(18,61,56,.045); }
+    .metric { min-height: 190px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+    .metric::after { content: ""; position: absolute; right: -24px; bottom: -35px; width: 110px; height: 110px; border-radius: 50%; background: var(--mint); opacity: .55; }
+    .metric .metric-label { position: relative; z-index: 1; color: var(--muted); font-size: .78rem; font-weight: 850; text-transform: uppercase; letter-spacing: .06em; }
+    .metric-value { position: relative; z-index: 1; font-size: clamp(1.55rem, 2.5vw, 2.4rem); letter-spacing: -.06em; font-weight: 900; color: var(--forest); line-height: 1; margin: .5rem 0; }
+    [data-theme="dark"] .metric-value { color: var(--forest-2); }
+    .metric-unit { font-size: .8rem; color: var(--muted); }
+    .source-tag, .status, .confidence { display: inline-flex; align-items: center; gap: .38rem; width: fit-content; padding: .32rem .55rem; border-radius: 999px; font-weight: 850; font-size: .68rem; letter-spacing: .02em; }
+    .source-tag { background: var(--mint); color: var(--forest); }
+    .confidence { background: rgba(240,188,77,.18); color: #85600d; }
+    [data-theme="dark"] .confidence { color: #f4d47e; }
+    .confidence.high { background: rgba(85,197,150,.18); color: var(--forest-2); }
+    .confidence.low { background: rgba(232,116,88,.16); color: #a83d27; }
+    [data-theme="dark"] .confidence.low { color: #ffab8f; }
+    .insight { margin-top: 14px; padding: 16px 18px; border-radius: 15px; background: linear-gradient(90deg, var(--mint), transparent); border-left: 4px solid var(--mint-strong); color: var(--forest); font-weight: 750; }
+    .chart-card { margin-top: 14px; }
+    .chart-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.3rem; }
+    .tabs { display: flex; gap: .35rem; flex-wrap: wrap; }
+    .tab { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: .52rem .7rem; border-radius: 9px; font-size: .78rem; font-weight: 850; }
+    .tab[aria-selected="true"], .filter-btn.active { color: var(--forest); background: var(--mint); border-color: transparent; }
+    .chart-panel[hidden] { display: none; }
+    .bar-chart { display: grid; gap: 15px; }
+    .bar-row { display: grid; grid-template-columns: minmax(120px, 1.3fr) 3fr minmax(90px, .8fr); align-items: center; gap: 12px; font-size: .8rem; }
+    .bar-label { color: var(--muted); font-weight: 800; }
+    .bar-track { height: 14px; background: var(--mint); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--forest-2), var(--mint-strong)); transform-origin: left; animation: grow .8s ease-out both; }
+    .bar-fill.coral { background: linear-gradient(90deg, var(--coral), #f3a17d); }
+    .bar-value { text-align: right; color: var(--ink); font-weight: 900; font-variant-numeric: tabular-nums; }
+    @keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    .footnote { color: var(--muted); font-size: .75rem; margin: 1.2rem 0 0; }
+    .map-layout { display: grid; grid-template-columns: minmax(280px, .93fr) 1.07fr; gap: 15px; align-items: stretch; }
+    .map-card { min-height: 440px; padding: 15px; position: relative; background: #dcefe0; overflow: hidden; }
+    [data-theme="dark"] .map-card { background: #1a3831; }
+    .map-card::before { content: "TERRITORIAL OUTLINE"; position: absolute; top: 20px; left: 23px; z-index: 2; color: var(--forest); font-size: .68rem; letter-spacing: .15em; font-weight: 900; }
+    .map-card svg { width: 100%; height: 100%; min-height: 400px; }
+    .region-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; align-content: start; }
+    .region-card { padding: 16px; border: 1px solid var(--line); background: var(--card); border-radius: 16px; transition: .18s ease; }
+    .region-card:hover { transform: translateY(-2px); border-color: var(--mint-strong); box-shadow: var(--shadow); }
+    .region-card h3 { font-size: 1rem; color: var(--forest); }
+    .region-card p { color: var(--muted); font-size: .8rem; margin: .55rem 0 0; }
+    .region-card .region-kind { margin-top: .8rem; display: flex; flex-wrap: wrap; gap: .35rem; }
+    .mini-chip { padding: .24rem .45rem; border-radius: 6px; background: rgba(63,143,164,.12); color: var(--blue); font-size: .66rem; font-weight: 850; }
+    .filter-row { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; margin-bottom: 15px; }
+    .search-wrap { position: relative; flex: 1 1 210px; }
+    .search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .search { width: 100%; padding: .75rem .85rem .75rem 2.35rem; border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 11px; }
+    .filter-btn { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: .64rem .72rem; border-radius: 9px; font-size: .76rem; font-weight: 800; }
+    .empty { grid-column: 1 / -1; color: var(--muted); padding: 1.2rem; border: 1px dashed var(--line-strong); border-radius: 13px; text-align: center; }
+    .actor { position: relative; }
+    .actor h3 { margin-top: .85rem; font-size: 1.1rem; }
+    .actor p { color: var(--muted); font-size: .85rem; }
+    .actor::before { content: ""; display: block; height: 5px; width: 44px; border-radius: 10px; background: var(--coral); }
+    .actor.green::before { background: var(--mint-strong); } .actor.yellow::before { background: var(--sun); } .actor.blue::before { background: var(--blue); }
+    .chain { display: grid; grid-template-columns: .78fr 1.22fr; gap: 14px; }
+    .chain-list { display: grid; gap: 7px; align-content: start; }
+    .chain-step { display: grid; grid-template-columns: 36px 1fr auto; align-items: center; text-align: left; gap: 10px; padding: 12px 13px; border: 1px solid var(--line); color: var(--muted); background: var(--card); border-radius: 13px; transition: .2s; }
+    .chain-step:hover, .chain-step[aria-selected="true"] { border-color: var(--mint-strong); color: var(--forest); background: var(--mint); }
+    .step-num { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 50%; font-size: .72rem; font-weight: 900; background: var(--paper); color: var(--forest-2); }
+    .step-name { font-weight: 900; font-size: .86rem; }
+    .step-arrow { color: var(--coral); font-size: 1rem; }
+    .chain-detail { min-height: 300px; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(145deg, var(--card-strong), var(--mint)); }
+    .chain-detail h3 { font-size: clamp(1.35rem, 3vw, 2.3rem); color: var(--forest); }
+    .chain-detail p { color: var(--muted); }
+    .chain-detail ul { padding-left: 1.1rem; color: var(--ink); }
+    .chain-detail li { margin: .5rem 0; }
+    .detail-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .8rem; align-items: center; border-top: 1px solid var(--line); padding-top: 1rem; }
+    .reg-timeline { position: relative; display: grid; gap: 12px; }
+    .reg-timeline::before { content: ""; position: absolute; left: 19px; top: 20px; bottom: 20px; width: 2px; background: var(--line-strong); }
+    .reg-item { position: relative; display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; }
+    .reg-node { position: relative; z-index: 1; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: var(--forest); color: var(--sun); font-weight: 900; font-size: .76rem; box-shadow: 0 0 0 5px var(--paper); }
+    .reg-card { padding: 17px 19px; border: 1px solid var(--line); background: var(--card); border-radius: 15px; }
+    .reg-card h3 { font-size: 1rem; }
+    .reg-card p { margin: .35rem 0 0; color: var(--muted); font-size: .82rem; }
+    .reg-card .status { margin-top: .65rem; background: rgba(63,143,164,.12); color: var(--blue); }
+    .reg-card .status.proposal { background: rgba(240,188,77,.18); color: #85600d; }
+    [data-theme="dark"] .reg-card .status.proposal { color: #f4d47e; }
+    .alert-card { background: var(--forest); color: #eff9ef; border: 0; }
+    [data-theme="dark"] .alert-card { background: #214e43; color: #eff9ef; }
+    .alert-card .kicker { color: var(--sun); }
+    .alert-card p, .alert-card li { color: #c8ded0; }
+    .alert-card strong { color: #fff; }
+    .issue-grid .card { min-height: 150px; }
+    .issue-icon { font-size: 1.5rem; }
+    .issue-grid h3 { margin: .8rem 0 .4rem; font-size: 1rem; }
+    .issue-grid p { color: var(--muted); margin: 0; font-size: .82rem; }
+    .source-list { display: grid; gap: 9px; }
+    details { border: 1px solid var(--line); background: var(--card); border-radius: 13px; padding: 0 15px; }
+    summary { list-style: none; cursor: pointer; padding: 14px 0; font-weight: 850; font-size: .86rem; display: flex; justify-content: space-between; gap: 1rem; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--coral); font-size: 1.2rem; line-height: 1; }
+    details[open] summary::after { content: "−"; }
+    .source-body { padding: 0 0 15px; color: var(--muted); font-size: .8rem; }
+    .source-body a { color: var(--blue); overflow-wrap: anywhere; }
+    .source-body p { margin: .4rem 0; }
+    .source-list .source-code { color: var(--forest-2); font-weight: 900; margin-right: .4rem; }
+    footer { max-width: var(--max); padding: 0 22px 32px; margin: 0 auto; color: var(--muted); font-size: .76rem; }
+    .footer-line { border-top: 1px solid var(--line); padding-top: 18px; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .theme-switch { position: fixed; bottom: 18px; right: 18px; z-index: 15; width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--card-strong); color: var(--ink); box-shadow: var(--shadow); font-size: 1.1rem; }
+    .no-results { display: none; }
+    .no-results.show { display: block; }
+    @media (max-width: 1100px) {
+      .grid-4 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .layout { grid-template-columns: 185px minmax(0,1fr); gap: 24px; }
+      .map-layout { grid-template-columns: 1fr; }
+      .map-card { min-height: 330px; }
+      .map-card svg { min-height: 300px; }
+    }
+    @media (max-width: 740px) {
+      .hero-wrap { padding: 10px 10px 0; }
+      .hero { border-radius: 23px; min-height: 590px; padding: 28px 23px; }
+      .hero-top, .hero-bottom { display: block; }
+      .hero-stamp { margin-top: 1.3rem; width: fit-content; }
+      .hero-note { margin-top: 2rem; }
+      .hero-actions { justify-content: flex-start; margin-top: 1.4rem; }
+      .layout { display: block; padding: 24px 14px 65px; }
+      .side { position: static; margin-bottom: 33px; }
+      .side-box:first-child { overflow-x: auto; }
+      .section-nav { display: flex; min-width: max-content; }
+      .section-nav a { white-space: nowrap; }
+      .confidence-key { display: flex; flex-wrap: wrap; gap: .75rem; }
+      .section { margin-bottom: 54px; }
+      .section-head { display: block; }
+      .section-head .meta-line { margin-top: .75rem; }
+      .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; gap: 5px; }
+      .bar-value { text-align: left; }
+      .chart-toolbar { display: block; }
+      .chart-toolbar .tabs { margin-top: .8rem; }
+      .region-grid { grid-template-columns: 1fr; }
+      .chain { grid-template-columns: 1fr; }
+      .chain-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .chain-step { grid-template-columns: 28px 1fr; }
+      .step-arrow { display: none; }
+      .map-card { min-height: 290px; }
+      .map-card svg { min-height: 260px; }
+      .reg-item { grid-template-columns: 31px 1fr; gap: 10px; }
+      .reg-timeline::before { left: 14px; }
+      .reg-node { width: 30px; height: 30px; font-size: .62rem; box-shadow: 0 0 0 4px var(--paper); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Skip to content</a>
+  <header class="hero-wrap">
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">Market brief · Venezuela</p>
+          <h1>Livestock<br><em>in motion.</em></h1>
+          <p class="hero-dek">An atlas of comparable data, production geography, marketing routes, and rules reshaping the cattle and buffalo sectors.</p>
+        </div>
+        <div class="hero-stamp"><i aria-hidden="true"></i> Research cutoff · 03 Aug 2026</div>
+      </div>
+      <div class="hero-bottom">
+        <div class="hero-note"><span class="hero-mark" aria-hidden="true">✦</span><div><strong>Quick read:</strong> the recovery is partial, the chain remains fragmented, and current statistics are weak. Cards use FAOSTAT 2023 —the last year with comparable official observations in this review—; 2024 appears as estimated/imputed, and industry indicators are shown as signals, not a census.</div></div>
+        <div class="hero-actions"><a class="pill-btn" href="#datos">View base data ↓</a><a class="pill-btn" href="#cadena">Explore the chain ↓</a></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout" id="contenido">
+    <aside class="side" aria-label="Section navigation">
+      <div class="side-box">
+        <p class="side-title">In this reading</p>
+        <nav class="section-nav">
+          <a class="active" href="#panorama">Overview</a>
+          <a href="#datos">Base data</a>
+          <a href="#geografia">Geography</a>
+          <a href="#actores">Actors</a>
+          <a href="#cadena">Value chain</a>
+          <a href="#regulacion">Regulation</a>
+          <a href="#fuentes">Sources and limits</a>
+        </nav>
+      </div>
+      <div class="side-box">
+        <p class="side-title">How to read the evidence</p>
+        <div class="confidence-key">
+          <span><i class="dot high" aria-hidden="true"></i> High · institutional series / source</span>
+          <span><i class="dot mid" aria-hidden="true"></i> Medium · sector report</span>
+          <span><i class="dot low" aria-hidden="true"></i> Low · unverified figure</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <section class="section" id="panorama" aria-labelledby="panorama-title">
+        <div class="section-head"><div><p class="kicker">01 · Market signal</p><h2 id="panorama-title">A recovery that is still not an integrated chain.</h2><p class="lede">Domestic consumption outweighs exports. Producers, farm buyers, auctions, slaughterhouses, wholesalers, and retailers operate with financing, fuel, power, roads, and security frictions.</p></div><span class="confidence mid">Qualitative reading · medium</span></div>
+        <div class="grid grid-3 issue-grid">
+          <article class="card"><div class="issue-icon" aria-hidden="true">↗</div><h3>Partial recovery</h3><p>There are signs of rebuilding, but no recent statistical snapshot with consistent national coverage.</p></article>
+          <article class="card"><div class="issue-icon" aria-hidden="true">⌁</div><h3>Value captured along the way</h3><p>The farm-gate-to-retail spread, together with intermediation, makes producer income less predictable.</p></article>
+          <article class="card"><div class="issue-icon" aria-hidden="true">◌</div><h3>Climate and territory</h3><p>Flooding, drought, long routes, and the border add operating risk to an extensive activity.</p></article>
+        </div>
+        <div class="insight">The useful question is not “who is the biggest?”, because no validated public ranking exists. It is: <strong>where in the chain is the capacity to produce, transform, and formalize currently concentrated?</strong></div>
+      </section>
+
+      <section class="section" id="datos" aria-labelledby="datos-title">
+        <div class="section-head"><div><p class="kicker">02 · Quantitative base</p><h2 id="datos-title">The last comparable dataset counts animals, meat, and milk.</h2><p class="lede">FAOSTAT offers 2023 observations and estimated or imputed 2024 values. The cards show 2023; they should not be read as a 2026 operating dashboard.</p></div><span class="confidence high">FAOSTAT · official 2023</span></div>
+        <div class="grid grid-4">
+          <article class="card metric"><div><div class="metric-label">Cattle herd</div><div class="metric-value">16.210.903</div><div class="metric-unit">heads · 2023</div></div><span class="source-tag">FAOSTAT · official</span></article>
+          <article class="card metric"><div><div class="metric-label">Beef</div><div class="metric-value">370.190</div><div class="metric-unit">tonnes · 2023</div></div><span class="source-tag">FAOSTAT · official</span></article>
+          <article class="card metric"><div><div class="metric-label">Raw cow's milk</div><div class="metric-value">3.422.747</div><div class="metric-unit">tonnes · 2023</div></div><span class="source-tag">FAOSTAT · official</span></article>
+          <article class="card metric"><div><div class="metric-label">Buffalo meat</div><div class="metric-value">39.221</div><div class="metric-unit">tonnes · 2023</div></div><span class="source-tag">FAOSTAT · official</span></article>
+        </div>
+        <article class="card chart-card" aria-labelledby="chart-title">
+          <div class="chart-toolbar"><div><h3 id="chart-title">Reported production scale</h3><p class="meta-line">Visual comparison within each metric; not a time series.</p></div><div class="tabs" role="tablist" aria-label="Switch production metric"><button class="tab" role="tab" aria-selected="true" data-chart="meat">Beef</button><button class="tab" role="tab" aria-selected="false" data-chart="milk">Milk</button><button class="tab" role="tab" aria-selected="false" data-chart="herd">Herd</button></div></div>
+          <div class="chart-panel" id="chart-meat" role="tabpanel">
+            <div class="bar-chart"><div class="bar-row"><span class="bar-label">Beef</span><div class="bar-track"><div class="bar-fill" style="width:90.4%"></div></div><strong class="bar-value">370.190 t</strong></div><div class="bar-row"><span class="bar-label">Buffalo</span><div class="bar-track"><div class="bar-fill coral" style="width:9.6%"></div></div><strong class="bar-value">39.221 t</strong></div><div class="bar-row"><span class="bar-label">Beef + buffalo</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><strong class="bar-value">409.411 t</strong></div></div>
+            <p class="footnote">The sum of beef and buffalo meat reported by FAOSTAT for 2023 is 409.411 t. The chart's proportion is a scale reading, not a time series.</p>
+          </div>
+          <div class="chart-panel" id="chart-milk" role="tabpanel" hidden><div class="bar-chart"><div class="bar-row"><span class="bar-label">Raw cow's milk</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><strong class="bar-value">3.422.747 t</strong></div></div><p class="footnote">The milk series is expressed in tonnes and corresponds to raw cow's milk; it does not represent the volume entering the formal industry.</p></div>
+          <div class="chart-panel" id="chart-herd" role="tabpanel" hidden><div class="bar-chart"><div class="bar-row"><span class="bar-label">Cattle</span><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><strong class="bar-value">16.210.903 heads</strong></div><div class="bar-row"><span class="bar-label">Buffalo</span><div class="bar-track"><div class="bar-fill coral" style="width:12.4%"></div></div><strong class="bar-value">2.012.704 heads</strong></div></div><p class="footnote">FAOSTAT reports 2.012.704 buffalo in 2023. The sector figure of up to 3,5 million is retained as an unverified estimate.</p></div>
+        </article>
+      </section>
+
+      <section class="section" id="geografia" aria-labelledby="geo-title">
+        <div class="section-head"><div><p class="kicker">03 · Production geography</p><h2 id="geo-title">A country of livestock corridors, not a state ranking.</h2><p class="lede">The following areas appear repeatedly in sector sources and in the territory's production profile. The order is editorial: <strong>it does not imply a validated share or hierarchy</strong>.</p></div><span class="confidence mid">Territorial coverage · medium</span></div>
+        <div class="map-layout">
+          <div class="card map-card" aria-label="Territorial outline of Venezuelan livestock regions">
+            <svg viewBox="0 0 500 470" role="img" aria-labelledby="map-title map-desc">
+              <title id="map-title">Territorial outline without ranking</title><desc id="map-desc">Abstract silhouette of Venezuela with nodes marking Apure, Zulia, Barinas, Portuguesa, Guárico, Cojedes, Táchira, Lara, and the east.</desc>
+              <path d="M59 78 C88 53 127 42 166 51 C202 33 248 45 277 68 C317 57 353 73 377 101 C412 105 438 133 432 164 C459 187 449 218 426 229 C419 260 393 271 373 288 C359 324 334 348 306 354 C291 389 254 403 219 391 C188 418 155 407 144 379 C108 373 94 346 103 319 C74 302 65 275 77 247 C49 225 48 194 70 174 C54 144 45 112 59 78Z" fill="rgba(18,61,56,.12)" stroke="rgba(18,61,56,.58)" stroke-width="3"/>
+              <path d="M88 186 C154 144 206 164 251 152 C307 138 357 163 419 203 M96 284 C168 262 226 277 300 249 C343 233 381 248 411 265 M173 73 C167 157 184 223 172 315 M278 67 C274 149 298 227 282 354" fill="none" stroke="rgba(18,61,56,.14)" stroke-width="2" stroke-dasharray="7 8"/>
+              <g fill="#e87458" stroke="#fff" stroke-width="4"><circle cx="145" cy="293" r="12"/><circle cx="101" cy="145" r="12"/><circle cx="191" cy="241" r="12"/><circle cx="211" cy="277" r="12"/><circle cx="245" cy="286" r="12"/><circle cx="201" cy="206" r="12"/><circle cx="113" cy="219" r="12"/><circle cx="166" cy="176" r="12"/><circle cx="345" cy="231" r="12"/></g>
+              <g fill="var(--forest)" font-family="system-ui" font-size="13" font-weight="800"><text x="116" y="323">Apure</text><text x="54" y="128">Zulia</text><text x="160" y="228">Barinas</text><text x="174" y="307">Portuguesa</text><text x="256" y="313">Guárico</text><text x="215" y="193">Cojedes</text><text x="76" y="207">Táchira</text><text x="142" y="158">Lara / Carora</text><text x="357" y="225">East</text></g>
+              <text x="250" y="437" text-anchor="middle" fill="var(--forest)" opacity=".75" font-family="system-ui" font-size="11" font-weight="700">Areas mentioned in the summary · not to scale</text>
+            </svg>
+          </div>
+          <div>
+            <div class="filter-row" role="group" aria-label="Filter regions"><div class="search-wrap"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><label class="sr-only" for="region-search">Search region or activity</label><input class="search" id="region-search" type="search" placeholder="Search region or activity…"></div><button class="filter-btn active" type="button" data-filter="all">All</button><button class="filter-btn" type="button" data-filter="cattle">Cattle</button><button class="filter-btn" type="button" data-filter="buffalo">Buffalo</button></div>
+            <div class="region-grid" id="region-grid">
+              <article class="region-card" data-kind="cattle" data-search="apure savanna extensive bravos agroflora genetics"><h3>Apure</h3><p>Vast savanna corridor and reference for extensive ranching, genetics, and regional actors.</p><div class="region-kind"><span class="mini-chip">cattle</span><span class="mini-chip">genetics</span></div></article>
+              <article class="region-card" data-kind="buffalo" data-search="zulia machiques perija lake maracaibo south lake buffalo milk cheese meat"><h3>Zulia · Machiques / South of the Lake</h3><p>Dual-purpose zone: meat and milk; buffalo appears as a dynamic activity alongside cattle.</p><div class="region-kind"><span class="mini-chip">cattle</span><span class="mini-chip">buffalo</span><span class="mini-chip">dairy</span></div></article>
+              <article class="region-card" data-kind="cattle" data-search="barinas plains meat milk"><h3>Barinas</h3><p>Part of the plains axis named in the territorial synthesis; no validated state share.</p><div class="region-kind"><span class="mini-chip">cattle</span><span class="mini-chip">plains</span></div></article>
+              <article class="region-card" data-kind="cattle" data-search="portuguesa agriculture milk meat agribusiness"><h3>Portuguesa</h3><p>Intersection of livestock and agricultural production; part of the central corridor profile.</p><div class="region-kind"><span class="mini-chip">cattle</span><span class="mini-chip">agribusiness</span></div></article>
+              <article class="region-card" data-kind="cattle" data-search="guarico plains extensive meat"><h3>Guárico</h3><p>Plains territory identified for cattle production, with exposure to climate cycles.</p><div class="region-kind"><span class="mini-chip">cattle</span><span class="mini-chip">plains</span></div></article>
+              <article class="region-card" data-kind="cattle" data-search="cojedes central meat milk auction"><h3>Cojedes</h3><p>Central zone linked to production, purchasing, and livestock-movement circuits.</p><div class="region-kind"><span class="mini-chip">cattle</span><span class="mini-chip">commerce</span></div></article>
+              <article class="region-card" data-kind="cattle" data-search="tachira border border states milk meat smuggling mobility"><h3>Táchira and the border</h3><p>The sector summary places 65% of milk in border states: an industry claim, not an official census.</p><div class="region-kind"><span class="mini-chip">border</span><span class="mini-chip">dairy</span></div></article>
+              <article class="region-card" data-kind="cattle" data-search="lara carora criollo limonero genetics milk"><h3>Lara · Carora</h3><p>Reference for Carora/Criollo Limonero genetic resources in the regulatory and production discussion.</p><div class="region-kind"><span class="mini-chip">genetics</span><span class="mini-chip">milk</span></div></article>
+              <article class="region-card" data-kind="buffalo" data-search="monagas anzoategui bolivar delta amacuro east buffalo wetlands"><h3>East · Monagas, Anzoátegui, Bolívar, Delta Amacuro</h3><p>Eastern group cited as a livestock area; the summary offers no breakdown or ranking by entity.</p><div class="region-kind"><span class="mini-chip">buffalo</span><span class="mini-chip">east</span></div></article>
+              <div class="empty no-results" id="region-empty">No match in this outline. Try “milk”, “border”, or “buffalo”.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="actores" aria-labelledby="actors-title">
+        <div class="section-head"><div><p class="kicker">04 · Ecosystem</p><h2 id="actors-title">Visible actors; leadership does not necessarily mean production.</h2><p class="lede">The actor map helps locate functions. It is not a producer ranking or proof of ownership, scale, or vertical integration.</p></div><span class="confidence mid">Functional classification · medium</span></div>
+        <div class="grid grid-3">
+          <article class="card actor"><span class="source-tag">Industry association</span><h3>Fedenaga · Confagan</h3><p>Industry associations of reference. They represent sector interests; they should not be read as producing companies.</p></article>
+          <article class="card actor green"><span class="source-tag">Regional / state</span><h3>Bravos de Apure</h3><p>Regional actor cited in Apure's production discussion. The profile establishes neither volume nor ranking.</p></article>
+          <article class="card actor green"><span class="source-tag">Slaughterhouse</span><h3>San Francisco Industrial Slaughterhouse</h3><p>Authorities reported capacity above 600 animals/day; the figure has not been independently audited.</p></article>
+          <article class="card actor yellow"><span class="source-tag">Genetics</span><h3>Agroflora · Apure</h3><p>State-oriented actor associated with genetics and livestock development in the synthesis.</p></article>
+          <article class="card actor blue"><span class="source-tag">Processing</span><h3>Grupo San Simón</h3><p>Relevant processing actor; commercial relevance does not mean primary production.</p></article>
+          <article class="card actor blue"><span class="source-tag">Processing</span><h3>Lácteos Los Andes</h3><p>Dairy industry mentioned as a processing actor. It is not presented as a capacity ranking.</p></article>
+        </div>
+        <div class="insight">Structural fact — <strong>80% of the herd is in the hands of small and medium producers</strong>: reported industry claim, not an official census with public methodology.</div>
+      </section>
+
+      <section class="section" id="cadena" aria-labelledby="chain-title">
+        <div class="section-head"><div><p class="kicker">05 · How value moves</p><h2 id="chain-title">Explore the chain from farm to plate.</h2><p class="lede">Each click shows the role, bottleneck, and formalization signal of a link.</p></div><span class="confidence mid">Chain described · medium</span></div>
+        <div class="chain">
+          <div class="chain-list" role="tablist" aria-label="Value-chain links">
+            <button class="chain-step" type="button" role="tab" aria-selected="true" data-chain="produccion"><span class="step-num">01</span><span class="step-name">Farm / producer</span><span class="step-arrow">→</span></button>
+            <button class="chain-step" type="button" role="tab" aria-selected="false" data-chain="acopio"><span class="step-num">02</span><span class="step-name">Collection and purchasing</span><span class="step-arrow">→</span></button>
+            <button class="chain-step" type="button" role="tab" aria-selected="false" data-chain="sacrificio"><span class="step-num">03</span><span class="step-name">Auction / slaughter</span><span class="step-arrow">→</span></button>
+            <button class="chain-step" type="button" role="tab" aria-selected="false" data-chain="transformacion"><span class="step-num">04</span><span class="step-name">Processing</span><span class="step-arrow">→</span></button>
+            <button class="chain-step" type="button" role="tab" aria-selected="false" data-chain="retail"><span class="step-num">05</span><span class="step-name">Wholesale / retail</span><span class="step-arrow">↗</span></button>
+          </div>
+          <article class="card chain-detail" id="chain-detail" role="tabpanel" aria-live="polite">
+            <div><span class="source-tag" id="chain-tag">Source of value</span><h3 id="chain-name">Farm / producer</h3><p id="chain-copy">The production unit absorbs climate, inputs, fuel, security, and price risk before the animal or milk enters the commercial circuit.</p><ul id="chain-list"><li>Small and medium producers appear as the herd's structural base in an industry claim.</li><li>Fedenaga's cited 2025 price signal is around US$ 2,10/kg at the producer level.</li></ul></div>
+            <div class="detail-footer"><span class="confidence mid" id="chain-confidence">Sector evidence · medium</span><span class="meta-line" id="chain-risk">Key risk: costs and liquidity</span></div>
+          </article>
+        </div>
+        <div class="grid grid-3" style="margin-top:14px"><article class="card metric" style="min-height:150px"><div><div class="metric-label">Milk to formal industry</div><div class="metric-value">14%</div><div class="metric-unit">sector estimate</div></div><span class="confidence mid">Not an official census</span></article><article class="card metric" style="min-height:150px"><div><div class="metric-label">Milk in border states</div><div class="metric-value">65%</div><div class="metric-unit">industry claim</div></div><span class="confidence mid">Methodology not specified</span></article><article class="card metric" style="min-height:150px"><div><div class="metric-label">Buffalo in supermarkets</div><div class="metric-value">15–20%</div><div class="metric-unit">sector estimate of meat</div></div><span class="confidence low">Unverified</span></article></div>
+      </section>
+
+      <section class="section" id="regulacion" aria-labelledby="reg-title">
+        <div class="section-head"><div><p class="kicker">06 · Rules of the game</p><h2 id="reg-title">Traceability, animal health, and mobility controls are now at the center.</h2><p class="lede">The activity crosses health permits, animal movement, slaughter, taxes, land, environment, labor, and imports/exports.</p></div><span class="confidence high">Institutions identified · high</span></div>
+        <div class="reg-timeline">
+          <article class="reg-item"><div class="reg-node">01</div><div class="reg-card"><h3>INSAI · health authority</h3><p>Registration and health control, vaccination, certificates, and disease prevention, including foot-and-mouth disease.</p><span class="status">Operational / institutional framework</span></div></article>
+          <article class="reg-item"><div class="reg-node">02</div><div class="reg-card"><h3>SIGESAI · administrative gateway</h3><p>Permits, registration, animal mobility, and certificates connect to the INSAI system.</p><span class="status">Identified operating system</span></div></article>
+          <article class="reg-item"><div class="reg-node">03</div><div class="reg-card"><h3>Slaughter and food safety</h3><p>The formal chain depends on authorized slaughterhouses, food controls, and sanctions against clandestine slaughter and smuggling.</p><span class="status">Sector regulation</span></div></article>
+          <article class="reg-item"><div class="reg-node">04</div><div class="reg-card"><h3>Beyond the pen</h3><p>SENIAT, land, environment, water, labor relations, and imports/exports add layers of compliance.</p><span class="status">Cross-cutting compliance</span></div></article>
+          <article class="reg-item"><div class="reg-node">05</div><div class="reg-card"><h3>11 Jun 2026 · bill in first reading</h3><p>The National Assembly reported a reform proposal: bioelectric identification/digital codes linked to SIGESAI, good practices, Carora and Criollo Limonero genetic resources, authorized slaughterhouses, sanctions, financing, and assistance.</p><span class="status proposal">Proposal · do not assume enactment</span></div></article>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="outlook-title">
+        <div class="section-head"><div><p class="kicker">07 · Signals to monitor</p><h2 id="outlook-title">What to watch before taking a position.</h2></div></div>
+        <div class="grid grid-2">
+          <article class="card alert-card"><p class="kicker">Market tension</p><h3>Farm-gate price ≠ retail price</h3><p>A 2025 Fedenaga statement placed the producer at around <strong>US$ 2,10/kg</strong> and described a higher downstream price. The difference is a structural signal, not a universal quotation.</p></article>
+          <article class="card"><p class="kicker">Exports</p><h3>Ambition, but no stable flow</h3><p>The summary records reports of a pause in live-cattle exports since November 2025 and aspirations toward China and the Gulf. It is not presented as a stable export industry.</p></article>
+        </div>
+      </section>
+
+      <section class="section" id="fuentes" aria-labelledby="sources-title">
+        <div class="section-head"><div><p class="kicker">08 · Sources and limits</p><h2 id="sources-title">A traceable reading must say what we do not know.</h2><p class="lede">Sources are grouped by provenance. Sector and media data remain labeled as such so estimates are not turned into official facts.</p></div></div>
+        <div class="source-list">
+          <details open><summary><span><span class="source-code">FAO / FAOSTAT</span> Comparable 2023-2024 data</span><span class="confidence high">High · official 2023 / estimated 2024</span></summary><div class="source-body"><p>Base: <a href="https://www.fao.org/faostat/en/#data/QCL" target="_blank" rel="noopener">FAOSTAT · QCL</a> and <a href="https://db.nomics.world/FAO/QCL" target="_blank" rel="noopener">DBnomics</a>. The cards use 2023 observations; 2024 contains estimated or imputed values. The series may include methodological notes and quality flags.</p></div></details>
+          <details><summary><span><span class="source-code">INSAI / SIGESAI</span> Health, mobility, and certificates</span><span class="confidence high">High · institutional portal</span></summary><div class="source-body"><p><a href="https://www.insai.gob.ve/" target="_blank" rel="noopener">INSAI</a> · <a href="https://sigesai.insai.gob.ve/" target="_blank" rel="noopener">SIGESAI</a>. They are identified as institutional references; the availability and updating of each procedure may change.</p></div></details>
+          <details><summary><span><span class="source-code">AN · 11 Jun 2026</span> Reform in first reading</span><span class="confidence high">High · legislative source</span></summary><div class="source-body"><p><a href="https://www.asambleanacional.gob.ve/noticias/an-aprueba-en-primera-discusion-reforma-de-ley-para-la-proteccion-de-la-actividad-ganadera" target="_blank" rel="noopener">National Assembly note</a>. It is a proposal in first reading: it is not equivalent to an enacted law or current regulation.</p></div></details>
+          <details><summary><span><span class="source-code">Industry associations / sector / media</span> Estimates and signals</span><span class="confidence mid">Medium / low · not census-based</span></summary><div class="source-body"><p>Includes the summarized sector claims: 14% of milk to formal industry, 65% in border states, 80% of the herd among small/medium producers, 15–20% of buffalo meat in supermarkets, and up to 3,5 million buffalo. They are not presented as validated official statistics.</p><p>Academic reference identified: <a href="https://doi.org/10.31876/rcs.v25i4.30531" target="_blank" rel="noopener">DOI 10.31876/rcs.v25i4.30531</a>.</p></div></details>
+          <details><summary><span><span class="source-code">USDA FAS</span> 2025 reference identified</span><span class="confidence low">Access not fully verified</span></summary><div class="source-body"><p><a href="https://www.fas.usda.gov/data/venezuela-livestock-and-products-annual-2025" target="_blank" rel="noopener">Venezuela: Livestock and Products Annual 2025</a>. It is retained as a located reference; access may be blocked and it is not used here to add unverified figures.</p></div></details>
+        </div>
+        <div class="card" style="margin-top:14px"><h3>Important gaps</h3><div class="grid grid-3" style="margin-top:14px"><div><strong>No state ranking</strong><p class="meta-line">The summary has no recent validated share by federal entity.</p></div><div><strong>No confirmed buffalo census</strong><p class="meta-line">FAOSTAT reports 2,01 M in 2023; up to 3,5 M is an unverified sector estimate.</p></div><div><strong>No operational 2026 data</strong><p class="meta-line">FAOSTAT 2024 is estimated/imputed; there is no public monthly dashboard by slaughterhouse.</p></div></div></div>
+      </section>
+    </main>
+  </div>
+  <footer><div class="footer-line"><span>Editorial explorer · Venezuela · cutoff 03 Aug 2026</span><span>Built without external dependencies · data labeled by provenance</span></div></footer>
+  <button class="theme-switch" type="button" id="theme-toggle" aria-label="Switch to dark mode" aria-pressed="false">☾</button>
+  <script>
+    (function () {
+      'use strict';
+      const root = document.documentElement;
+      const themeToggle = document.getElementById('theme-toggle');
+      const setTheme = (theme) => {
+        root.dataset.theme = theme;
+        const dark = theme === 'dark';
+        themeToggle.textContent = dark ? '☀' : '☾';
+        themeToggle.setAttribute('aria-pressed', String(dark));
+        themeToggle.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+        try { localStorage.setItem('ganaderia-theme', theme); } catch (_) { /* storage unavailable */ }
+      };
+      let storedTheme = null;
+      try { storedTheme = localStorage.getItem('ganaderia-theme'); } catch (_) { /* no storage */ }
+      setTheme(storedTheme === 'dark' ? 'dark' : 'light');
+      themeToggle.addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+
+      const navLinks = Array.from(document.querySelectorAll('.section-nav a'));
+      const sections = navLinks.map((link) => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            navLinks.forEach((link) => link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id));
+          });
+        }, { rootMargin: '-12% 0px -72% 0px', threshold: 0 });
+        sections.forEach((section) => observer.observe(section));
+      }
+
+      document.querySelectorAll('[data-chart]').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const chart = tab.dataset.chart;
+          document.querySelectorAll('[data-chart]').forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+          document.querySelectorAll('.chart-panel').forEach((panel) => { panel.hidden = panel.id !== 'chart-' + chart; });
+        });
+      });
+
+      const regionCards = Array.from(document.querySelectorAll('.region-card'));
+      const searchInput = document.getElementById('region-search');
+      const empty = document.getElementById('region-empty');
+      let activeFilter = 'all';
+      const updateRegions = () => {
+        const term = (searchInput.value || '').trim().toLocaleLowerCase('en');
+        let visible = 0;
+        regionCards.forEach((card) => {
+          const matchesFilter = activeFilter === 'all' || card.dataset.kind === activeFilter || (activeFilter === 'buffalo' && card.dataset.search.includes('buffalo'));
+          const matchesSearch = !term || card.dataset.search.toLocaleLowerCase('en').includes(term) || card.textContent.toLocaleLowerCase('en').includes(term);
+          const show = matchesFilter && matchesSearch;
+          card.hidden = !show;
+          if (show) visible += 1;
+        });
+        empty.classList.toggle('show', visible === 0);
+      };
+      document.querySelectorAll('[data-filter]').forEach((button) => {
+        button.addEventListener('click', () => {
+          activeFilter = button.dataset.filter;
+          document.querySelectorAll('[data-filter]').forEach((item) => item.classList.toggle('active', item === button));
+          updateRegions();
+        });
+      });
+      searchInput.addEventListener('input', updateRegions);
+
+      const chainData = {
+        produccion: { tag: 'Source of value', name: 'Farm / producer', copy: 'The production unit absorbs climate, inputs, fuel, security, and price risk before the animal or milk enters the commercial circuit.', bullets: ['Small and medium producers appear as the herd\'s structural base in an industry claim.', 'Fedenaga\'s cited 2025 price signal is around US$ 2,10/kg at the producer level.'], confidence: 'Sector evidence · medium', risk: 'Key risk: costs and liquidity' },
+        acopio: { tag: 'Commercial bridge', name: 'Collection and purchasing', copy: 'Farm buyers, intermediaries, collection centers, and direct sales connect dispersed supply with formal and informal destinations.', bullets: ['Intermediation can change the price and the lot\'s traceability.', 'Milk that does not enter the formal industry may go to cheese makers or direct sales.'], confidence: 'Chain described · medium', risk: 'Key risk: informality and distance' },
+        sacrificio: { tag: 'Control point', name: 'Auction / slaughter', copy: 'Auctions, slaughterhouses, and meatpacking plants concentrate mobility, inspection, yield, and the release of meat.', bullets: ['The San Francisco reference exceeds 600 animals/day according to authorities; it has not been independently audited.', 'The legislative proposal emphasizes authorized slaughterhouses and sanctions for clandestine slaughter.'], confidence: 'Mixed · institutional + sector', risk: 'Key risk: health and capacity' },
+        transformacion: { tag: 'Added value', name: 'Processing', copy: 'Cheese makers, the dairy industry, and processors turn milk and meat into products with health and logistics requirements.', bullets: ['Grupo San Simón and Lácteos Los Andes are cited as relevant processors, not as a producer ranking.', 'The 14% of milk going to formal industry is a sector estimate, not a census.'], confidence: 'Sector · medium / low', risk: 'Key risk: formalization' },
+        retail: { tag: 'Last mile', name: 'Wholesale / retail', copy: 'Wholesalers, butcher shops, and supermarkets receive the product; the gap from the farm-gate price becomes visible here.', bullets: ['Buffalo is estimated at 15–20% of supermarket meat; an unverified sector figure.', 'Domestic consumption appears to be a more important destination than stable exports.'], confidence: 'Sector · medium / low', risk: 'Key risk: demand and price' }
+      };
+      const detail = { tag: document.getElementById('chain-tag'), name: document.getElementById('chain-name'), copy: document.getElementById('chain-copy'), list: document.getElementById('chain-list'), confidence: document.getElementById('chain-confidence'), risk: document.getElementById('chain-risk') };
+      document.querySelectorAll('[data-chain]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const item = chainData[button.dataset.chain];
+          if (!item) return;
+          document.querySelectorAll('[data-chain]').forEach((node) => node.setAttribute('aria-selected', String(node === button)));
+          detail.tag.textContent = item.tag; detail.name.textContent = item.name; detail.copy.textContent = item.copy; detail.confidence.textContent = item.confidence; detail.risk.textContent = item.risk;
+          detail.list.innerHTML = item.bullets.map((bullet) => '<li>' + bullet + '</li>').join('');
+        });
+      });
+    }());
+  </script>
+</body>
+</html>
