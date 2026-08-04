@@ -75,7 +75,7 @@
       overflow: hidden;
     }
     .hero {
-      position: relative; max-width: var(--max); min-height: 560px; margin: 0 auto;
+      position: relative; max-width: var(--max); min-height: 430px; margin: 0 auto;
       padding: clamp(28px, 6vw, 82px) 22px 34px;
       display: flex; flex-direction: column; justify-content: space-between;
       isolation: isolate;
@@ -102,10 +102,7 @@
       backdrop-filter: blur(8px); white-space: nowrap;
     }
     .hero-stamp i { width: 8px; height: 8px; display: block; border-radius: 50%; background: var(--mint-strong); box-shadow: 0 0 0 5px rgba(76,185,138,.16); }
-    .hero-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 2rem; }
-    .hero-note { display: flex; gap: 1rem; align-items: flex-start; max-width: 760px; color: #c8ded0; font-size: .86rem; }
-    .hero-note strong { color: #fff; }
-    .hero-mark { width: 58px; height: 58px; display: grid; place-items: center; flex: 0 0 58px; background: var(--sun); color: var(--forest); border-radius: 16px; font-size: 1.85rem; transform: rotate(-4deg); }
+    .hero-bottom { display: flex; align-items: end; gap: 2rem; }
     .hero-actions { display: flex; gap: .65rem; flex-wrap: wrap; justify-content: flex-end; }
     .pill-btn { border: 1px solid rgba(255,255,255,.3); color: #f4fbf1; background: rgba(255,255,255,.08); padding: .72rem 1rem; border-radius: 999px; font-weight: 800; font-size: .84rem; transition: .2s ease; text-decoration: none; }
     .pill-btn:hover { background: rgba(255,255,255,.18); transform: translateY(-2px); }
@@ -273,10 +270,10 @@
       .map-card svg { min-height: 300px; }
     }
     @media (max-width: 740px) {
-      .hero { min-height: 620px; padding: 30px 16px 28px; }
+      .hero { min-height: 430px; padding: 30px 16px 28px; }
       .hero-top, .hero-bottom { display: block; }
       .hero-stamp { margin-top: 1.4rem; width: fit-content; white-space: normal; }
-      .hero-note { margin-top: 2rem; }
+
       .hero-actions { justify-content: flex-start; margin-top: 1.4rem; }
       .layout { display: block; padding: 28px 14px 65px; }
       .side { position: static; margin-bottom: 38px; }
@@ -326,12 +323,10 @@
         <div>
           <p class="eyebrow">Market brief | Venezuela</p>
           <h1>Venezuela's<br><em>livestock market.</em></h1>
-          <p class="hero-dek">What the available evidence says about cattle and buffalo: official production data, production corridors, commercial links, and the rules around animal movement.</p>
         </div>
         <div class="hero-stamp"><i aria-hidden="true"></i> Research cutoff: 03 Aug 2026</div>
       </div>
       <div class="hero-bottom">
-        <div class="hero-note"><span class="hero-mark" aria-hidden="true">✦</span><div><strong>How to read this brief:</strong> the latest comparable official observations in this review are FAOSTAT 2023. FAOSTAT 2024 values are estimated or imputed. Sector and media figures stay labeled as claims or estimates.</div></div>
         <div class="hero-actions"><a class="pill-btn" href="#datos">View base data ↓</a><a class="pill-btn" href="#cadena">Explore the chain ↓</a></div>
       </div>
     </div>
