@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explicación técnica detallada del Deploy Orchestrator API: propósito, casos de uso, arquitectura, decisiones, límites y preguntas de entrevista.">
+  <title>Deploy Orchestrator · Explicación técnica</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #182824;
+      --muted: #667771;
+      --paper: #f4f5ef;
+      --paper-deep: #e8eee6;
+      --panel: #fbfcf7;
+      --line: #d4dfd5;
+      --line-strong: #afc2b4;
+      --forest: #10473f;
+      --forest-2: #1f6a5a;
+      --mint: #cdebd8;
+      --mint-strong: #4cb98a;
+      --coral: #d96d53;
+      --sun: #e8b83f;
+      --blue: #367f93;
+      --violet: #7760a8;
+      --shadow: 0 15px 40px rgba(16,71,63,.10);
+      --max: 1480px;
+      --measure: 800px;
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #e7f0e8;
+      --muted: #a9bbb1;
+      --paper: #0d1c1a;
+      --paper-deep: #132925;
+      --panel: #142d28;
+      --line: #284740;
+      --line-strong: #3d6459;
+      --forest: #c9efd2;
+      --forest-2: #87d8ad;
+      --mint: #1e4c42;
+      --mint-strong: #65d3a0;
+      --coral: #ff9275;
+      --sun: #f0c85f;
+      --blue: #72bfd0;
+      --violet: #b9a3e8;
+      --shadow: 0 16px 44px rgba(0,0,0,.25);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 92% 0, rgba(232,184,63,.13), transparent 28rem),
+        radial-gradient(circle at 0 20%, rgba(76,185,138,.10), transparent 25rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    :focus-visible { outline: 3px solid var(--sun); outline-offset: 3px; }
+    .skip-link { position: fixed; left: 1rem; top: .75rem; z-index: 50; transform: translateY(-150%); background: var(--sun); color: #17231f; padding: .65rem 1rem; border-radius: 999px; font-weight: 800; }
+    .skip-link:focus { transform: translateY(0); }
+    .hero-wrap { background: linear-gradient(125deg, #0b302c 0%, #124a42 57%, #1b6252 100%); color: #f1f9f1; border-bottom: 1px solid rgba(213,241,223,.18); overflow: hidden; }
+    .hero { position: relative; max-width: var(--max); min-height: 455px; margin: 0 auto; padding: clamp(28px, 6vw, 78px) 22px 34px; display: flex; flex-direction: column; justify-content: space-between; isolation: isolate; overflow: hidden; }
+    .hero::before, .hero::after { content: ""; position: absolute; z-index: -1; border-radius: 50%; pointer-events: none; }
+    .hero::before { width: 560px; height: 560px; right: -150px; top: -285px; border: 1px solid rgba(213,241,223,.28); box-shadow: 0 0 0 52px rgba(213,241,223,.045), 0 0 0 108px rgba(213,241,223,.035); }
+    .hero::after { width: 360px; height: 360px; left: 48%; bottom: -280px; background: rgba(232,184,63,.13); }
+    .hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2rem; align-items: start; }
+    .eyebrow, .kicker, .side-title { text-transform: uppercase; letter-spacing: .15em; font-size: .72rem; font-weight: 850; }
+    .eyebrow { color: #b9e5c5; margin: 0 0 1.05rem; }
+    .hero h1 { max-width: 1050px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(3.1rem, 7.8vw, 8rem); line-height: .91; letter-spacing: -.07em; font-weight: 700; }
+    .hero h1 em { color: var(--sun); font-style: normal; }
+    .hero-dek { max-width: 780px; margin: 1.5rem 0 0; font-size: clamp(1.03rem, 1.55vw, 1.32rem); color: #d5e7da; }
+    .hero-stamp { display: flex; align-items: center; gap: .6rem; color: #d6e9dc; font-size: .8rem; border: 1px solid rgba(213,241,223,.3); padding: .6rem .8rem; border-radius: 999px; backdrop-filter: blur(8px); white-space: nowrap; }
+    .hero-stamp i { width: 8px; height: 8px; display: block; border-radius: 50%; background: var(--mint-strong); box-shadow: 0 0 0 5px rgba(76,185,138,.16); }
+    .hero-bottom { display: flex; align-items: end; justify-content: space-between; gap: 2rem; }
+    .hero-meta { color: #c7ddd0; font-size: .83rem; max-width: 620px; }
+    .hero-actions { display: flex; gap: .65rem; flex-wrap: wrap; justify-content: flex-end; }
+    .pill-btn { border: 1px solid rgba(255,255,255,.3); color: #f4fbf1; background: rgba(255,255,255,.08); padding: .72rem 1rem; border-radius: 999px; font-weight: 800; font-size: .84rem; transition: .2s ease; text-decoration: none; }
+    .pill-btn:hover { background: rgba(255,255,255,.18); transform: translateY(-2px); }
+    .theme-btn { border: 1px solid rgba(255,255,255,.3); color: #f4fbf1; background: rgba(255,255,255,.08); padding: .72rem .9rem; border-radius: 999px; font-weight: 800; font-size: .84rem; }
+    .layout { max-width: var(--max); margin: 0 auto; padding: 42px 22px 80px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 42px; align-items: start; }
+    .side { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 1.4rem; }
+    .side-box { border-top: 1px solid var(--line-strong); border-bottom: 1px solid var(--line); padding: 1rem 0 1.15rem; }
+    .side-title { margin: 0 0 .7rem; color: var(--muted); }
+    .section-nav { display: grid; gap: .18rem; }
+    .section-nav a { position: relative; padding: .48rem .7rem; color: var(--muted); text-decoration: none; font-weight: 750; font-size: .84rem; border-radius: 8px; transition: .18s; }
+    .section-nav a:hover, .section-nav a.active { background: var(--mint); color: var(--forest); }
+    .section-nav a.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: var(--coral); border-radius: 3px; }
+    .confidence-key { display: grid; gap: .55rem; font-size: .77rem; color: var(--muted); }
+    .confidence-key span { display: flex; align-items: center; gap: .45rem; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 9px; }
+    .dot.green { background: var(--mint-strong); } .dot.yellow { background: var(--sun); } .dot.coral { background: var(--coral); }
+    main { min-width: 0; }
+    section { scroll-margin-top: 24px; margin: 0 0 76px; }
+    .section-head { max-width: var(--measure); margin-bottom: 1.45rem; }
+    .kicker { color: var(--coral); margin: 0 0 .6rem; }
+    h2 { max-width: 900px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.2rem, 4.5vw, 4.4rem); letter-spacing: -.055em; line-height: .98; color: var(--forest); }
+    [data-theme="dark"] h2 { color: var(--forest); }
+    h3 { color: var(--forest); line-height: 1.15; margin: 0 0 .65rem; }
+    h4 { margin: 0 0 .42rem; color: var(--forest); }
+    p { margin: .45rem 0 1rem; }
+    .lead { font-size: 1.14rem; color: var(--muted); max-width: var(--measure); }
+    .small { font-size: .88rem; color: var(--muted); }
+    code { color: var(--forest); background: var(--mint); padding: .12rem .34rem; border-radius: 5px; font-size: .9em; }
+    pre { background: #102f2b; color: #e1f2e5; padding: 1.1rem 1.25rem; border-radius: 14px; overflow: auto; max-width: 100%; min-width: 0; font-size: .87rem; line-height: 1.55; box-shadow: var(--shadow); }
+    pre code { background: none; color: inherit; padding: 0; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .panel { background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line); border-radius: 18px; padding: 1.2rem; box-shadow: 0 8px 24px rgba(16,71,63,.04); }
+    .panel strong { color: var(--forest); }
+    .callout { border-left: 4px solid var(--coral); background: var(--paper-deep); padding: 1rem 1.1rem; border-radius: 0 12px 12px 0; max-width: 900px; }
+    .callout.blue { border-left-color: var(--blue); }
+    .callout.yellow { border-left-color: var(--sun); }
+    .metric { min-height: 150px; display: flex; flex-direction: column; justify-content: space-between; }
+    .metric-number { font-family: Georgia, serif; color: var(--forest); font-size: 2.55rem; line-height: 1; letter-spacing: -.06em; }
+    .metric-label { color: var(--muted); font-weight: 700; font-size: .88rem; }
+    .tag { display: inline-flex; align-items: center; padding: .25rem .55rem; border-radius: 999px; background: var(--mint); color: var(--forest); font-size: .73rem; font-weight: 850; letter-spacing: .03em; }
+    .tag.coral { background: color-mix(in srgb, var(--coral) 17%, var(--panel)); color: var(--coral); }
+    .tag.blue { background: color-mix(in srgb, var(--blue) 16%, var(--panel)); color: var(--blue); }
+    .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; gap: .65rem; align-items: center; margin: 1.7rem 0; }
+    .flow-node { min-height: 125px; padding: 1rem; border: 1px solid var(--line-strong); background: var(--panel); border-radius: 16px; display: flex; flex-direction: column; justify-content: space-between; }
+    .flow-node b { color: var(--forest); }
+    .flow-node span { color: var(--muted); font-size: .82rem; }
+    .arrow { color: var(--coral); font-size: 1.8rem; text-align: center; }
+    .scenario-tabs { display: flex; gap: .55rem; flex-wrap: wrap; margin: 1rem 0; }
+    .scenario-tabs button, .filter-btn { border: 1px solid var(--line-strong); color: var(--forest); background: var(--panel); padding: .58rem .8rem; border-radius: 9px; font-weight: 800; }
+    .scenario-tabs button[aria-selected="true"], .filter-btn.active { color: #17342d; background: var(--sun); border-color: var(--sun); }
+    [data-theme="dark"] .scenario-tabs button[aria-selected="true"], [data-theme="dark"] .filter-btn.active { color: #17231f; }
+    .scenario-panel { min-height: 240px; }
+    .scenario-panel[hidden] { display: none; }
+    .step-list { display: grid; gap: .72rem; margin: 1rem 0 0; padding: 0; list-style: none; counter-reset: steps; }
+    .step-list li { display: grid; grid-template-columns: 2rem 1fr; gap: .8rem; align-items: start; counter-increment: steps; }
+    .step-list li::before { content: counter(steps); width: 2rem; height: 2rem; display: grid; place-items: center; background: var(--forest); color: #f1f9f1; border-radius: 50%; font-weight: 850; }
+    .state-table, .api-table, .error-table, .decision-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    .state-table th, .state-table td, .api-table th, .api-table td, .error-table th, .error-table td { border-bottom: 1px solid var(--line); padding: .8rem .7rem; text-align: left; vertical-align: top; }
+    .state-table th, .api-table th, .error-table th { color: var(--forest); font-size: .76rem; text-transform: uppercase; letter-spacing: .08em; }
+    .state-table td:first-child { font-weight: 850; color: var(--forest); white-space: nowrap; }
+    .legal { color: #227153; font-weight: 800; } .illegal { color: var(--coral); font-weight: 800; }
+    .decision-grid { display: grid; gap: .8rem; }
+    details { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); overflow: hidden; }
+    details + details { margin-top: .75rem; }
+    summary { cursor: pointer; list-style: none; padding: 1rem 1.1rem; display: flex; align-items: center; gap: .7rem; font-weight: 850; color: var(--forest); }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+"; width: 1.45rem; height: 1.45rem; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--coral); flex: 0 0 1.45rem; }
+    details[open] summary::before { content: "−"; background: var(--mint); }
+    .detail-body { padding: 0 1.1rem 1.1rem 3.25rem; color: var(--muted); }
+    .detail-body p { margin: .2rem 0 .75rem; }
+    .detail-body b { color: var(--ink); }
+    .qa-grid { display: grid; gap: .75rem; }
+    .qa-grid details summary { font-size: .96rem; }
+    .qa-grid .detail-body { color: var(--ink); }
+    .two-col-list { columns: 2; column-gap: 2.4rem; padding-left: 1.15rem; }
+    .two-col-list li { break-inside: avoid; margin-bottom: .6rem; }
+    .link-list { display: grid; gap: .5rem; padding-left: 1.2rem; }
+    .link-list a { color: var(--blue); overflow-wrap: anywhere; }
+    .review-banner { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: 1rem; }
+    .footer { max-width: var(--max); margin: 0 auto; padding: 0 22px 52px; color: var(--muted); font-size: .82rem; }
+    .footer-line { border-top: 1px solid var(--line); padding-top: 1rem; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: 1fr; }
+      .side { position: static; display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; }
+      .side-box { border-bottom: 0; }
+      .section-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      .hero-top, .hero-bottom { display: block; }
+      .hero-stamp { display: inline-flex; margin-top: 1.5rem; }
+      .hero-actions { justify-content: flex-start; margin-top: 1.2rem; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+      .flow { grid-template-columns: 1fr; }
+      .arrow { transform: rotate(90deg); height: 1.3rem; }
+      .side { display: block; }
+      .side-box { margin-bottom: 1rem; }
+      .section-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .two-col-list { columns: 1; }
+      .state-table, .api-table, .error-table { display: block; overflow-x: auto; white-space: nowrap; }
+      .api-table td:last-child, .error-table td:last-child { white-space: normal; min-width: 260px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Saltar al contenido</a>
+  <header class="hero-wrap">
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <p class="eyebrow">Revisión técnica · Bun + SQLite + REST</p>
+          <h1>Deploy <em>Orchestrator</em></h1>
+          <p class="hero-dek">Una API que registra, coordina y protege el ciclo de vida de despliegues de servicios. Esta página explica qué resuelve el proyecto, cómo funciona por dentro y qué decisiones técnicas permiten que siga siendo correcto cuando llegan reintentos, carreras y reinicios.</p>
+        </div>
+        <div class="hero-stamp"><i></i> HEAD revisado · fc66fec</div>
+      </div>
+      <div class="hero-bottom">
+        <div class="hero-meta">Explicación basada en el código, las pruebas, el README y el workflow remoto del repositorio. No se atribuye al proyecto ninguna capacidad que no esté implementada.</div>
+        <div class="hero-actions">
+          <a class="pill-btn" href="https://github.com/0bkevin/deploy-orchestrator-api" target="_blank" rel="noreferrer">Repositorio ↗</a>
+          <a class="pill-btn" href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/README.md" target="_blank" rel="noreferrer">README ↗</a>
+          <a class="pill-btn" href="https://github.com/0bkevin/deploy-orchestrator-api/actions/runs/30820503966" target="_blank" rel="noreferrer">CI verde ↗</a>
+          <button class="theme-btn" id="themeToggle" type="button" aria-label="Cambiar tema">Tema ◐</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="side" aria-label="Navegación de la explicación">
+      <div class="side-box">
+        <p class="side-title">En esta página</p>
+        <nav class="section-nav">
+          <a href="#idea">La idea</a>
+          <a href="#casos">Casos reales</a>
+          <a href="#arquitectura">Arquitectura</a>
+          <a href="#ciclo">Ciclo de vida</a>
+          <a href="#api">API</a>
+          <a href="#decisiones">Decisiones</a>
+          <a href="#datos">SQLite</a>
+          <a href="#pruebas">Pruebas</a>
+          <a href="#limites">Límites</a>
+          <a href="#preguntas">Preguntas</a>
+        </nav>
+      </div>
+      <div class="side-box">
+        <p class="side-title">Lectura rápida</p>
+        <div class="confidence-key">
+          <span><i class="dot green"></i>Implementado y probado</span>
+          <span><i class="dot yellow"></i>Decisión con trade-off</span>
+          <span><i class="dot coral"></i>Límite o siguiente paso</span>
+        </div>
+      </div>
+    </aside>
+
+    <main id="content">
+      <section id="idea">
+        <div class="section-head">
+          <p class="kicker">01 · La idea</p>
+          <h2>¿Qué es este proyecto?</h2>
+          <p class="lead">Es el pequeño “control plane” de un sistema de despliegues. Un cliente le dice “quiero desplegar la versión 1.4.2 de <code>orders</code>”; la API registra esa intención, impone el orden correcto de estados y deja una historia durable que otros procesos pueden consultar.</p>
+        </div>
+        <div class="grid-3">
+          <article class="panel metric"><span class="tag">Qué coordina</span><div class="metric-number">5 estados</div><div class="metric-label">queued · running · succeeded · failed · rolled_back</div></article>
+          <article class="panel metric"><span class="tag blue">Qué protege</span><div class="metric-number">1 activo</div><div class="metric-label">Máximo un despliegue queued/running por servicio</div></article>
+          <article class="panel metric"><span class="tag coral">Qué conserva</span><div class="metric-number">SQLite</div><div class="metric-label">Historial, idempotencia, orden y estado después de reiniciar</div></article>
+        </div>
+        <div class="callout" style="margin-top:1rem">
+          <strong>La frase que conviene recordar:</strong> la aplicación coordina el estado de los despliegues; no es, por sí sola, un proveedor de máquinas virtuales, un orquestador de contenedores ni un pipeline de SSH.
+        </div>
+      </section>
+
+      <section id="casos">
+        <div class="section-head">
+          <p class="kicker">02 · Uso real</p>
+          <h2>¿Para qué sirve en la vida real?</h2>
+          <p class="lead">En una plataforma interna, un pipeline de CI/CD o un servicio de release management, varios actores pueden intentar crear o actualizar el mismo despliegue. Esta API convierte esas acciones en operaciones consistentes.</p>
+        </div>
+        <div class="scenario-tabs" role="tablist" aria-label="Escenarios reales">
+          <button type="button" role="tab" aria-selected="true" aria-controls="scenario-release" id="tab-release">Release normal</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="scenario-retry" id="tab-retry">Reintento</button>
+          <button type="button" role="tab" aria-selected="false" aria-controls="scenario-rollback" id="tab-rollback">Rollback</button>
+        </div>
+        <article class="panel scenario-panel" id="scenario-release" role="tabpanel" aria-labelledby="tab-release">
+          <span class="tag">Ejemplo: servicio orders</span>
+          <h3>Publicar una versión sin perder el control del estado</h3>
+          <ol class="step-list">
+            <li><div>El pipeline solicita <code>POST /deployments</code> con <code>service=orders</code>, <code>version=1.4.2</code> y una clave de idempotencia.</div></li>
+            <li><div>La API crea el registro como <code>queued</code>. La base de datos impide que exista otro <code>queued</code> o <code>running</code> para <code>orders</code>.</div></li>
+            <li><div>Un worker o proceso de despliegue puede tomar la orden y avanzar a <code>running</code>.</div></li>
+            <li><div>Cuando termina, registra <code>succeeded</code> o <code>failed</code>. La API conserva todos los cambios y expone cuál es la versión actual.</div></li>
+          </ol>
+        </article>
+        <article class="panel scenario-panel" id="scenario-retry" role="tabpanel" aria-labelledby="tab-retry" hidden>
+          <span class="tag blue">Ejemplo: timeout de red</span>
+          <h3>Repetir una petición sin crear dos despliegues</h3>
+          <ol class="step-list">
+            <li><div>El cliente crea <code>orders 1.4.2</code> con <code>Idempotency-Key: orders-2026-08-05</code>.</div></li>
+            <li><div>El servidor crea el registro, pero la respuesta se pierde por un timeout.</div></li>
+            <li><div>El cliente repite exactamente la misma petición. La API encuentra la clave durable y devuelve el mismo ID, no otro despliegue.</div></li>
+            <li><div>Si la misma clave llega con otro servicio o versión, la API devuelve <code>409 Conflict</code>: la clave ya está ligada a otro payload.</div></li>
+          </ol>
+        </article>
+        <article class="panel scenario-panel" id="scenario-rollback" role="tabpanel" aria-labelledby="tab-rollback" hidden>
+          <span class="tag coral">Ejemplo: versión defectuosa</span>
+          <h3>Volver al último release exitoso</h3>
+          <ol class="step-list">
+            <li><div><code>orders 1.3.0</code> llega a <code>succeeded</code> y es el deployment actual.</div></li>
+            <li><div><code>orders 1.4.0</code> también llega a <code>succeeded</code>; ahora es el más nuevo y actual.</div></li>
+            <li><div>Un operador pide <code>succeeded → rolled_back</code> para <code>1.4.0</code>.</div></li>
+            <li><div>La API no borra historia: busca el deployment más nuevo que aún está <code>succeeded</code>, por lo que <code>1.3.0</code> vuelve a ser el actual.</div></li>
+          </ol>
+        </article>
+        <div class="callout blue" style="margin-top:1rem"><strong>Qué no hace el proyecto:</strong> no instala una imagen, no crea un contenedor, no cambia un DNS y no se conecta por SSH. Es la capa de coordinación y registro sobre la cual esos mecanismos podrían construirse.</div>
+      </section>
+
+      <section id="arquitectura">
+        <div class="section-head">
+          <p class="kicker">03 · Arquitectura</p>
+          <h2>Cómo viaja una petición</h2>
+          <p class="lead">Se separan HTTP, reglas de negocio y persistencia. Cada capa tiene una responsabilidad concreta y se puede probar sin depender de la siguiente.</p>
+        </div>
+        <div class="flow" aria-label="Flujo de arquitectura">
+          <div class="flow-node"><b>Cliente / CI</b><span>HTTP, curl, pipeline o worker</span></div><div class="arrow" aria-hidden="true">→</div>
+          <div class="flow-node"><b><code>Bun.serve</code></b><span>Rutas, JSON, query params y errores HTTP</span></div><div class="arrow" aria-hidden="true">→</div>
+          <div class="flow-node"><b><code>DeploymentService</code></b><span>Estados, normalización, idempotencia y reglas</span></div><div class="arrow" aria-hidden="true">→</div>
+          <div class="flow-node"><b>Repository → SQLite</b><span>Transacciones, índices, triggers y datos durables</span></div>
+        </div>
+        <div class="grid-2">
+          <article class="panel"><h3>Composition root</h3><p><code>src/server.ts</code> construye el repositorio SQLite y lo inyecta al servicio. El dominio no crea su propia base de datos. Por eso las pruebas pueden pasar un repositorio aislado y el servidor puede elegir el archivo de producción.</p></article>
+          <article class="panel"><h3>Boundary de datos</h3><p>Las filas de SQLite entran como <code>unknown</code>. <code>sqlite-row-parsers.ts</code> valida tipos, estados, strings, timestamps ISO y enteros seguros antes de convertirlas en un <code>Deployment</code>.</p></article>
+        </div>
+        <pre aria-label="Estructura simplificada"><code>Request
+  → Bun.serve / handleRequest()
+  → DeploymentService
+  → DeploymentRepository
+  → SqliteDeploymentRepository
+  → SQLite file + WAL
+
+Response
+  ← Deployment / DeploymentPage / health
+  ← ApiError 400, 404, 409, 503
+  ← 500 solo para fallos no clasificados</code></pre>
+      </section>
+
+      <section id="ciclo">
+        <div class="section-head">
+          <p class="kicker">04 · Estado</p>
+          <h2>El ciclo de vida es una máquina de estados</h2>
+          <p class="lead">Un deployment no puede saltar libremente entre estados. La regla existe en TypeScript para dar respuestas claras y también en SQLite para proteger la información contra escrituras que esquiven el servicio.</p>
+        </div>
+        <div class="callout yellow"><strong>Regla principal:</strong> los targets válidos en general que son ilegales desde el estado actual devuelven <code>409</code>. Un target que ni siquiera pertenece al conjunto permitido devuelve <code>400</code>.</div>
+        <table class="state-table panel" style="margin-top:1rem">
+          <thead><tr><th>Estado origen</th><th>Transición permitida</th><th>Qué significa</th><th>Otros targets</th></tr></thead>
+          <tbody>
+            <tr><td>queued</td><td class="legal">→ running</td><td>La ejecución comenzó.</td><td class="illegal">409</td></tr>
+            <tr><td>running</td><td class="legal">→ succeeded / failed</td><td>Terminó con éxito o con error.</td><td class="illegal">409</td></tr>
+            <tr><td>succeeded</td><td class="legal">→ rolled_back</td><td>Se retiró el release exitoso más reciente.</td><td class="illegal">409</td></tr>
+            <tr><td>failed</td><td>ninguna</td><td>Estado terminal.</td><td class="illegal">409</td></tr>
+            <tr><td>rolled_back</td><td>ninguna</td><td>Estado terminal histórico.</td><td class="illegal">409</td></tr>
+          </tbody>
+        </table>
+        <p class="small">El estado <code>queued</code> no es un target de transición. Por eso enviar <code>{"to":"queued"}</code> produce <code>400</code>, no <code>409</code>.</p>
+      </section>
+
+      <section id="api">
+        <div class="section-head">
+          <p class="kicker">05 · Contrato HTTP</p>
+          <h2>Qué expone la API</h2>
+          <p class="lead">El contrato es pequeño intencionalmente. Cubre crear, avanzar, consultar, listar, encontrar el actual y observar salud.</p>
+        </div>
+        <table class="api-table panel">
+          <thead><tr><th>Método</th><th>Ruta</th><th>Entrada</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr><td><code>POST</code></td><td><code>/deployments</code></td><td><code>{ service, version }</code> y opcional <code>Idempotency-Key</code></td><td>Crea <code>queued</code>; devuelve <code>201</code>.</td></tr>
+            <tr><td><code>POST</code></td><td><code>/deployments/:id/transitions</code></td><td><code>{ to }</code></td><td>Aplica una transición legal; devuelve <code>200</code>.</td></tr>
+            <tr><td><code>GET</code></td><td><code>/deployments</code></td><td><code>service</code>, <code>status</code>, <code>limit</code>, <code>cursor</code> u <code>offset</code></td><td>Lista ordenada de más nuevo a más viejo.</td></tr>
+            <tr><td><code>GET</code></td><td><code>/services/:name/current</code></td><td>Nombre de servicio en la ruta</td><td>El <code>succeeded</code> más nuevo; <code>404</code> si no existe.</td></tr>
+            <tr><td><code>GET</code></td><td><code>/health</code></td><td>Ninguna</td><td><code>status</code>, <code>uptime</code> e <code>inFlight</code>.</td></tr>
+          </tbody>
+        </table>
+        <div class="grid-2" style="margin-top:1rem">
+          <article class="panel"><h3>Validación de entrada</h3><ul><li>JSON mal formado: <code>400</code>.</li><li>JSON que no es objeto: <code>400</code>.</li><li>Strings vacíos se rechazan.</li><li>Service y version se recortan con <code>trim()</code>.</li><li>IDs con encoding inválido: <code>400</code>.</li><li>Enteros de paginación deben ser seguros.</li></ul></article>
+          <article class="panel"><h3>Mapeo de errores</h3><ul><li>Input inválido: <code>400</code>.</li><li>Deployment o current inexistente: <code>404</code>.</li><li>Conflicto de negocio o carrera: <code>409</code>.</li><li>SQLite ocupada después del timeout: <code>503</code>.</li><li>Fallo inesperado: <code>500</code>.</li></ul></article>
+        </div>
+      </section>
+
+      <section id="decisiones">
+        <div class="section-head">
+          <p class="kicker">06 · Decisiones técnicas</p>
+          <h2>Qué se hizo, por qué y para qué</h2>
+          <p class="lead">Abre cada decisión para ver el razonamiento. En cada caso también se explica el costo o límite que se aceptó.</p>
+        </div>
+        <div class="decision-grid">
+          <details open><summary>1. Bun como runtime, package manager y test runner</summary><div class="detail-body"><p><b>Qué:</b> el proyecto declara <code>bun@1.3.14</code>, usa <code>Bun.serve</code>, <code>bun:sqlite</code> y <code>bun:test</code>.</p><p><b>Por qué:</b> mantiene todo el toolchain en el runtime pedido y evita mezclar Node, npm, Vitest o un servidor externo.</p><p><b>Para qué:</b> el mismo entorno instala, ejecuta, prueba y sirve la API. <b>Trade-off:</b> el proyecto queda ligado a APIs de Bun, aunque eso era una restricción explícita y aquí se usa a favor.</p></div></details>
+          <details><summary>2. <code>Bun.serve</code> sin framework HTTP</summary><div class="detail-body"><p><b>Qué:</b> <code>server.ts</code> usa directamente <code>Bun.serve</code>, una función <code>handleRequest</code> y expresiones regulares pequeñas para las rutas.</p><p><b>Por qué:</b> hay cinco rutas y ninguna necesita middleware complejo. Un framework agregaría abstracciones y dependencias sin resolver un problema actual.</p><p><b>Para qué:</b> el contrato HTTP queda visible: parsear, validar, llamar al servicio y convertir errores en respuestas. <b>Trade-off:</b> si crece mucho la API, habrá que centralizar routing y middleware.</p></div></details>
+          <details><summary>3. TypeScript estricto y datos externos como <code>unknown</code></summary><div class="detail-body"><p><b>Qué:</b> los contratos usan unions cerradas y propiedades <code>readonly</code>. El parser HTTP y los parsers de SQLite no confían en datos externos.</p><p><b>Por qué:</b> un generic de TypeScript no valida lo que realmente devuelve SQLite ni lo que realmente envía un cliente. El código necesita comprobar tipos en runtime.</p><p><b>Para qué:</b> evitar que un BLOB, status desconocido o timestamp corrupto llegue al dominio como si fuera válido. <b>Trade-off:</b> hay más código de validación, pero el error aparece en el boundary correcto.</p></div></details>
+          <details><summary>4. Separación entre servicio de dominio y repository</summary><div class="detail-body"><p><b>Qué:</b> <code>DeploymentService</code> conoce reglas y estados; <code>DeploymentRepository</code> define persistencia; <code>SqliteDeploymentRepository</code> conoce SQL y Bun SQLite.</p><p><b>Por qué:</b> las reglas de negocio no deben depender de SQL concreto ni construir su propia base de datos.</p><p><b>Para qué:</b> probar el dominio con una frontera estable, cambiar la persistencia en el futuro y mantener composición explícita en <code>createApp</code>. <b>Trade-off:</b> hay una interfaz y un objeto adicional para una aplicación pequeña.</p></div></details>
+          <details><summary>5. Estados como union cerrada y tabla explícita de transiciones</summary><div class="detail-body"><p><b>Qué:</b> <code>DeploymentStatus</code> solo puede ser <code>queued</code>, <code>running</code>, <code>succeeded</code>, <code>failed</code> o <code>rolled_back</code>. <code>legalTransitions</code> declara las cuatro transiciones válidas.</p><p><b>Por qué:</b> una comparación suelta de strings permitiría olvidar casos. La tabla hace el modelo legible y comprobable.</p><p><b>Para qué:</b> distinguir un target inválido de una transición ilegal y tener un único mapa de la máquina de estados. <b>Trade-off:</b> agregar un nuevo estado exige actualizar tipos, tabla, schema, trigger y pruebas.</p></div></details>
+          <details><summary>6. Normalizar strings antes de consultar o guardar</summary><div class="detail-body"><p><b>Qué:</b> service, version, filtros y nombres de servicio pasan por una validación de string no vacío y <code>trim()</code>.</p><p><b>Por qué:</b> <code>orders</code> y <code>  orders  </code> deben representar el mismo servicio; de lo contrario se puede evadir el límite de un deployment activo.</p><p><b>Para qué:</b> hacer consistentes las búsquedas, el índice único, current y las claves de idempotencia. <b>Trade-off:</b> espacios intencionales no se conservan.</p></div></details>
+          <details><summary>7. Idempotencia durable y ligada al payload</summary><div class="detail-body"><p><b>Qué:</b> <code>idempotency_keys</code> guarda la clave, service normalizado, version normalizada y deployment ID. Un replay busca el deployment actual en vez de devolver una respuesta inicial congelada.</p><p><b>Por qué:</b> una respuesta puede perderse después de que el servidor ya escribió. El cliente necesita repetir la petición sin duplicar el efecto.</p><p><b>Para qué:</b> reintentos seguros y conflictos explícitos si la misma clave se usa para otro payload. <b>Trade-off:</b> las claves y sus bindings deben conservarse y eventualmente tener una política de retención.</p></div></details>
+          <details><summary>8. Índice único parcial para el deployment activo</summary><div class="detail-body"><p><b>Qué:</b> <code>UNIQUE INDEX ... ON deployments(service) WHERE status IN ('queued', 'running')</code>.</p><p><b>Por qué:</b> una comprobación en TypeScript sola falla cuando dos procesos consultan “libre” al mismo tiempo. La base de datos debe ser la autoridad atómica.</p><p><b>Para qué:</b> convertir “un activo por servicio” en un invariante que sobrevive a carreras entre conexiones y procesos. <b>Trade-off:</b> el repository debe traducir la constraint a un conflicto de negocio, no a un <code>500</code>.</p></div></details>
+          <details><summary>9. <code>BEGIN IMMEDIATE</code> para creación</summary><div class="detail-body"><p><b>Qué:</b> una transacción inmediata agrupa lookup de idempotencia, chequeo de activo, insert del deployment e insert de la clave.</p><p><b>Por qué:</b> esas cuatro operaciones forman una sola decisión. Si una falla, no debe quedar una mitad escrita.</p><p><b>Para qué:</b> impedir duplicados, claves huérfanas y estados intermedios observables. <b>Trade-off:</b> los writers se serializan y pueden competir por el lock.</p></div></details>
+          <details><summary>10. Transiciones con compare-and-set</summary><div class="detail-body"><p><b>Qué:</b> la transacción lee el estado y actualiza con <code>WHERE id = ? AND status = expectedStatus</code>. Después vuelve a leer el registro.</p><p><b>Por qué:</b> dos peticiones pueden leer <code>running</code>; solo una debe ganar el cambio a <code>succeeded</code> o <code>failed</code>.</p><p><b>Para qué:</b> producir una respuesta exitosa y un <code>409</code> en la carrera, sin sobrescribir silenciosamente el resultado del otro proceso. <b>Trade-off:</b> el cliente debe reintentar o volver a consultar cuando pierde la carrera.</p></div></details>
+          <details><summary>11. Sequence autoincremental para orden y cursor</summary><div class="detail-body"><p><b>Qué:</b> cada fila recibe una sequence INTEGER inmutable. El público sigue viendo un UUID como ID; la sequence se usa internamente para ordenar y crear <code>v1.&lt;base36&gt;</code>.</p><p><b>Por qué:</b> timestamps pueden empatar y UUIDs no expresan orden de inserción. Una sequence del mismo archivo sí ofrece un orden total.</p><p><b>Para qué:</b> newest-first determinista y cursor estable cuando se insertan registros nuevos entre páginas. <b>Trade-off:</b> se valida el límite de enteros seguros de JavaScript.</p></div></details>
+          <details><summary>12. Cursor y offset coexistentes</summary><div class="detail-body"><p><b>Qué:</b> <code>cursor</code> filtra <code>sequence &lt; beforeSequence</code>; <code>offset</code> sigue disponible y no se pueden combinar.</p><p><b>Por qué:</b> el cursor permite continuar desde un punto inmutable; offset conserva compatibilidad y es sencillo para clientes que no enfrentan inserciones.</p><p><b>Para qué:</b> ofrecer una opción robusta y otra familiar. <b>Trade-off:</b> offset puede cambiar de contenido si se insertan filas entre dos requests.</p></div></details>
+          <details><summary>13. “Current” significa el succeeded más nuevo</summary><div class="detail-body"><p><b>Qué:</b> <code>GET /services/:name/current</code> selecciona el <code>succeeded</code> con mayor sequence, no un campo mutable de “current”.</p><p><b>Por qué:</b> evita mantener una segunda fuente de verdad y hace que el rollback sea una operación histórica, no una reescritura.</p><p><b>Para qué:</b> si el último succeeded se marca <code>rolled_back</code>, el succeeded anterior emerge automáticamente. <b>Trade-off:</b> current requiere una consulta ordenada.</p></div></details>
+          <details><summary>14. SQLite nativo en vez de memoria o ORM</summary><div class="detail-body"><p><b>Qué:</b> <code>bun:sqlite</code> guarda datos en un archivo configurable por <code>DATABASE_PATH</code>; los tests usan bases temporales o in-memory.</p><p><b>Por qué:</b> la memoria se pierde al reiniciar y el ejercicio pedía persistencia. Un ORM sería una capa extra para un schema pequeño donde se necesitan índices, triggers y PRAGMAs explícitos.</p><p><b>Para qué:</b> persistencia local, coordinación entre procesos del mismo host y control directo de constraints. <b>Trade-off:</b> SQLite no es una base distribuida y los writers compiten por un lock.</p></div></details>
+          <details><summary>15. Foreign keys, WAL y busy timeout</summary><div class="detail-body"><p><b>Qué:</b> cada conexión activa foreign keys; los archivos usan WAL; el timeout por defecto es 1 segundo y es configurable entre 0 y 60.000 ms.</p><p><b>Por qué:</b> foreign keys protegen relaciones, WAL permite que lectores y writers interfieran menos, y busy timeout da una ventana para locks breves.</p><p><b>Para qué:</b> hacer predecible la operación en un archivo compartido y traducir contención agotada a <code>503</code>. <b>Trade-off:</b> WAL no convierte SQLite en multi-host; además hay que respaldar los sidecars y probar restauración.</p></div></details>
+          <details><summary>16. Migrations versionadas y validación semántica</summary><div class="detail-body"><p><b>Qué:</b> <code>PRAGMA user_version</code> lleva el schema de 0 a 3: tablas e índices, triggers y luego reparación/fortalecimiento del schema.</p><p><b>Por qué:</b> “la tabla existe” no demuestra que tenga el índice, predicate, trigger o foreign key correctos. El startup inspecciona columnas, SQL, índices, triggers, foreign keys y range de sequence.</p><p><b>Para qué:</b> fallar temprano ante una base futura o counterfeit/corrupta en vez de aceptar invariantes falsas. <b>Trade-off:</b> cada cambio de schema necesita código de migración y fixtures de prueba.</p></div></details>
+          <details><summary>17. Parsers de filas SQLite</summary><div class="detail-body"><p><b>Qué:</b> los resultados de consultas se leen como <code>unknown</code> y se validan en <code>sqlite-row-parsers.ts</code>.</p><p><b>Por qué:</b> el tipo genérico de una query describe la expectativa del programador, pero no garantiza el contenido de una base dañada o manipulada.</p><p><b>Para qué:</b> rechazar status no conocidos, strings vacíos, timestamps no canónicos, BLOBs donde debía haber texto y sequences fuera de rango. <b>Trade-off:</b> la capa de storage es más verbosa.</p></div></details>
+          <details><summary>18. Errores de SQLite separados de errores de API</summary><div class="detail-body"><p><b>Qué:</b> el repository clasifica busy/locked como <code>StorageBusyError</code> y constraints como <code>StorageConstraintError</code>; el servicio las convierte a respuestas adecuadas.</p><p><b>Por qué:</b> el dominio no debería depender de <code>SQLiteError</code>, pero tampoco debe perder la diferencia entre un conflicto esperado y una falla interna.</p><p><b>Para qué:</b> devolver <code>503</code> para reintento, <code>409</code> para active-service y <code>500</code> para corruption/unclassified. <b>Trade-off:</b> el mapping debe mantenerse preciso para no ocultar bugs como conflictos de negocio.</p></div></details>
+          <details><summary>19. Ownership y shutdown del servidor</summary><div class="detail-body"><p><b>Qué:</b> si <code>createApp</code> crea el service, también cierra SQLite al detenerse; si recibe un service inyectado, no lo cierra. <code>server.stop</code> es idempotente y el bind fallido también limpia el recurso propio.</p><p><b>Por qué:</b> los recursos deben tener un dueño claro. Cerrar un service inyectado rompería al caller; no cerrar uno creado internamente deja handles abiertos.</p><p><b>Para qué:</b> evitar leaks en tests, reinicios y errores de startup sin cambiar el contrato nativo de <code>Bun.Server</code>. <b>Trade-off:</b> envolver <code>stop</code> requiere tests de lifecycle.</p></div></details>
+          <details><summary>20. CI con instalación congelada</summary><div class="detail-body"><p><b>Qué:</b> el workflow usa acciones fijadas por SHA, Bun 1.3.14, <code>bun install --frozen-lockfile</code>, typecheck, lint y <code>bun test</code> en push y pull request.</p><p><b>Por qué:</b> no basta con que funcione en la laptop; el lockfile y la versión del runtime deben ser reproducibles en CI.</p><p><b>Para qué:</b> detectar regresiones antes de publicar. <b>Importante:</b> el workflow actual valida; no implementa un deploy SSH. La explicación de producción separa CI de la estrategia de despliegue.</p></div></details>
+        </div>
+      </section>
+
+      <section id="datos">
+        <div class="section-head">
+          <p class="kicker">07 · Persistencia</p>
+          <h2>Qué guarda SQLite</h2>
+          <p class="lead">La base tiene dos tablas principales. La información durable permite reconstruir el estado después de cerrar y volver a abrir el proceso.</p>
+        </div>
+        <div class="grid-2">
+          <article class="panel"><span class="tag">deployments</span><h3>Historia de deployments</h3><ul><li><code>sequence</code>: orden interno autoincremental.</li><li><code>id</code>: UUID público único.</li><li><code>service</code> y <code>version</code>: payload normalizado.</li><li><code>status</code>: protegido por <code>CHECK</code>.</li><li><code>created_at</code> y <code>updated_at</code>: timestamps ISO.</li></ul></article>
+          <article class="panel"><span class="tag blue">idempotency_keys</span><h3>Bindings de reintento</h3><ul><li><code>request_key</code>: clave primaria.</li><li><code>deployment_id</code>: foreign key a deployments.</li><li><code>service</code> y <code>version</code>: fingerprint del payload.</li><li><code>ON DELETE CASCADE</code>: evita bindings huérfanos.</li></ul></article>
+        </div>
+        <div class="panel" style="margin-top:1rem"><h3>Índices y triggers</h3><div class="grid-3"><div><strong>Partial unique</strong><p class="small">Una fila activa por service.</p></div><div><strong>Newest/status</strong><p class="small">Queries de lista y current.</p></div><div><strong>Triggers</strong><p class="small">Campos inmutables y transiciones legales.</p></div></div></div>
+        <pre><code>PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+PRAGMA busy_timeout = 1000;
+PRAGMA user_version = 3;</code></pre>
+      </section>
+
+      <section id="pruebas">
+        <div class="section-head">
+          <p class="kicker">08 · Evidencia</p>
+          <h2>Cómo se verificó</h2>
+          <p class="lead">La revisión no se basa solo en leer archivos. Se ejecutó el gate sobre el HEAD remoto actual y se comprobó que el resultado de CI corresponde al mismo commit.</p>
+        </div>
+        <div class="grid-3">
+          <article class="panel metric"><span class="tag">Gate local</span><div class="metric-number">52</div><div class="metric-label">tests pasaron · 0 fallaron</div></article>
+          <article class="panel metric"><span class="tag blue">Assertions</span><div class="metric-number">206</div><div class="metric-label">expect calls en 3 archivos de prueba</div></article>
+          <article class="panel metric"><span class="tag coral">CI</span><div class="metric-number">verde</div><div class="metric-label">Run 30820503966 para fc66fec</div></article>
+        </div>
+        <div class="grid-2" style="margin-top:1rem">
+          <article class="panel"><h3>Pruebas de dominio y HTTP</h3><ul><li>Matriz completa de estados y targets.</li><li>Rutas reales con sockets HTTP.</li><li>Payloads mal formados y encoding inválido.</li><li>Filtros, offset y cursor.</li><li>Current y rollback histórico.</li><li>Health e in-flight.</li><li>20 requests concurrentes del mismo service y de la misma clave.</li></ul></article>
+          <article class="panel"><h3>Pruebas de SQLite</h3><ul><li>Persistencia y restart.</li><li>Conexiones y procesos separados.</li><li>Races de active-service, idempotencia y transitions.</li><li>Rollback transaccional.</li><li>Schema version y counterfeit schema objects.</li><li>Rows corruptas y safe integer boundary.</li><li>Busy timeout y mapping 503.</li></ul></article>
+        </div>
+        <div class="review-banner"><span class="tag">HEAD local = origin/main</span><span class="tag">Working tree limpio</span><span class="tag blue">Bun 1.3.14</span><span class="tag blue">Acciones fijadas por SHA</span></div>
+      </section>
+
+      <section id="limites">
+        <div class="section-head">
+          <p class="kicker">09 · Honestidad técnica</p>
+          <h2>Qué no está resuelto por este proyecto</h2>
+          <p class="lead">Una buena explicación también debe marcar los límites. Estas no son fallas frente al alcance actual; son decisiones de alcance o siguientes pasos para producción real.</p>
+        </div>
+        <div class="grid-2">
+          <article class="panel"><span class="tag coral">No incluido</span><h3>Autenticación y autorización</h3><p>La API no verifica quién puede crear, avanzar o rollbackear un deployment. En producción debe quedar detrás de un gateway, identity provider o middleware de autorización.</p></article>
+          <article class="panel"><span class="tag coral">No incluido</span><h3>Executor de despliegues</h3><p>El proyecto registra y coordina estados, pero no ejecuta SSH, Docker, Kubernetes ni una plataforma cloud. Un worker externo tendría que traducir <code>queued</code> a una acción real.</p></article>
+          <article class="panel"><span class="tag yellow">Límite</span><h3>SQLite es de un host</h3><p>WAL y varios procesos ayudan dentro del mismo host. No se debe poner el archivo en un filesystem de red ni escalar varios hosts con SQLite como writer. Para eso, PostgreSQL.</p></article>
+          <article class="panel"><span class="tag yellow">Hardening</span><h3>Controles operativos</h3><p>Body-size limits, rate limiting, retención de idempotency keys, métricas, backups off-host y alertas deben agregarse según el entorno operativo.</p></article>
+        </div>
+        <div class="callout" style="margin-top:1rem"><strong>Cómo responderlo en entrevista:</strong> “El ejercicio pedía el API y sus invariantes, no una plataforma completa de deployment. Por eso separé el control plane de la ejecución. En producción agregaría autenticación, un executor, backups y observabilidad; si necesito varios hosts, migraría el repository a PostgreSQL.”</div>
+      </section>
+
+      <section id="preguntas">
+        <div class="section-head">
+          <p class="kicker">10 · Preparación</p>
+          <h2>Preguntas que puede hacer un reclutador técnico</h2>
+          <p class="lead">Las respuestas están escritas para explicar el razonamiento, no para memorizar frases. Empieza por el problema, luego el mecanismo y finalmente el trade-off.</p>
+        </div>
+        <div class="qa-grid">
+          <details><summary>¿Cuál es el problema que resuelve?</summary><div class="detail-body">Coordina el ciclo de vida de despliegues de servicios y conserva una fuente durable de verdad. Evita dos deployments activos para el mismo servicio, hace seguros los reintentos, impide transiciones inválidas y permite consultar el deployment actual y el historial.</div></details>
+          <details><summary>¿Esto despliega realmente una aplicación?</summary><div class="detail-body">No por sí solo. Es la API de coordinación y registro. Puede ser llamada por un CI pipeline, un worker o un sistema interno que sí ejecute la infraestructura. Mantener esa frontera evita fingir que una API de estado ya es un executor de Docker, SSH o Kubernetes.</div></details>
+          <details><summary>¿Por qué SQLite y no PostgreSQL?</summary><div class="detail-body">El alcance pide persistencia local y el servicio puede correr en un host. SQLite evita una dependencia externa y permite usar constraints y transacciones reales. PostgreSQL sería la siguiente opción si hubiera varios hosts, failover o escritura sostenida alta.</div></details>
+          <details><summary>¿Cómo impides dos deployments activos?</summary><div class="detail-body">El servicio hace un chequeo para dar un error claro, pero la garantía real está en un partial unique index sobre <code>service</code> filtrado a <code>queued</code> y <code>running</code>. Si dos procesos llegan juntos, SQLite decide atómicamente cuál insert gana.</div></details>
+          <details><summary>¿Por qué no basta con un Map en memoria?</summary><div class="detail-body">Un Map desaparece al reiniciar, no coordina procesos separados y no ofrece constraints persistentes. SQLite conserva el historial, el binding de idempotencia y la regla de un activo entre conexiones del mismo archivo.</div></details>
+          <details><summary>¿Qué significa idempotency en este proyecto?</summary><div class="detail-body">Una misma clave y el mismo service/version representan una sola operación lógica. El replay devuelve el mismo deployment ID en su estado actual. La clave no puede reutilizarse con un payload diferente, porque eso sería mezclar dos operaciones.</div></details>
+          <details><summary>¿Por qué la transacción es <code>BEGIN IMMEDIATE</code>?</summary><div class="detail-body">La creación tiene varias operaciones que deben ser una sola unidad: lookup de clave, chequeo de activo, insert de deployment e insert de binding. <code>IMMEDIATE</code> toma temprano la reserva de escritura y evita que dos writers atraviesen el mismo chequeo como si fueran únicos.</div></details>
+          <details><summary>¿Cómo resuelves dos transitions simultáneas?</summary><div class="detail-body">La query actualiza solo si el status sigue siendo el que se leyó: <code>WHERE id = ? AND status = expectedStatus</code>. Una request cambia primero; la otra ve cero filas afectadas y recibe <code>409</code>.</div></details>
+          <details><summary>¿Por qué no ordenar por timestamp?</summary><div class="detail-body">Dos inserts pueden tener el mismo millisecond timestamp. La sequence autoincremental entrega un orden total dentro de la base. El UUID se conserva como identificador público, pero no se usa para ordenar.</div></details>
+          <details><summary>¿Cuál es la diferencia entre cursor y offset?</summary><div class="detail-body">Offset salta una cantidad de filas y se mantiene por compatibilidad, pero nuevas inserciones pueden mover las páginas. Cursor guarda una sequence anterior y pide filas menores a ella, por lo que es la opción recomendada para recorrer mientras llegan nuevos deployments.</div></details>
+          <details><summary>¿Cómo defines “current”?</summary><div class="detail-body">No existe un booleano current que pueda quedar desactualizado. Current es el deployment más nuevo que sigue en <code>succeeded</code>. Si el último succeeded pasa a <code>rolled_back</code>, el anterior succeeded vuelve a aparecer como current.</div></details>
+          <details><summary>¿Por qué rollback no borra el deployment?</summary><div class="detail-body">Borrar historia destruye auditoría y dificulta entender qué ocurrió. <code>rolled_back</code> es un estado terminal histórico; la consulta current simplemente ignora esa fila y encuentra el succeeded anterior.</div></details>
+          <details><summary>¿Qué protegen los triggers si el servicio ya valida?</summary><div class="detail-body">Protegen contra escrituras que lleguen desde otra conexión o herramienta y evadan <code>DeploymentService</code>. El servicio da errores de negocio claros; SQLite mantiene la invariante aunque el caller cambie.</div></details>
+          <details><summary>¿Qué pasa si la base está corrupta?</summary><div class="detail-body">El startup valida schema, columnas, constraints, índices, triggers, foreign keys y sequence. Las filas leídas se validan como datos no confiables. Un esquema o fila inválidos fallan explícitamente en vez de transformarse silenciosamente en un deployment válido.</div></details>
+          <details><summary>¿Por qué validar SQLite si TypeScript ya tiene tipos?</summary><div class="detail-body">TypeScript desaparece en runtime. Además, la base puede haber sido editada, estar dañada o devolver un valor con un tipo inesperado. Por eso las queries se reciben como <code>unknown</code> y los parsers validan el contenido real.</div></details>
+          <details><summary>¿Qué hace WAL y qué no hace?</summary><div class="detail-body">WAL permite que lectores y writers interfieran menos en un archivo local y mejora la convivencia entre procesos. No convierte SQLite en una base multi-host ni elimina la serialización de writers.</div></details>
+          <details><summary>¿Por qué un lock termina en 503?</summary><div class="detail-body">Una contención de SQLite agotada normalmente es temporal. <code>503</code> le dice al cliente que el servicio está temporalmente no disponible y que puede reintentar. Devolver un <code>500</code> perdería información operativa; devolver <code>409</code> lo confundiría con un conflicto de negocio.</div></details>
+          <details><summary>¿Por qué hay un repository interface?</summary><div class="detail-body">Aísla las reglas de negocio de la tecnología de almacenamiento. Permite probar el servicio con otra implementación y hace posible reemplazar SQLite por PostgreSQL sin reescribir las rutas y la máquina de estados.</div></details>
+          <details><summary>¿Por qué no agregaste un ORM?</summary><div class="detail-body">El schema es pequeño y requiere SQL específico: partial index, triggers, PRAGMAs, migrations y queries ordenadas por sequence. Un ORM agregaría una capa de traducción sin una necesidad concreta. El SQL explícito hace visibles las invariantes.</div></details>
+          <details><summary>¿Cómo se probó la concurrencia real?</summary><div class="detail-body">Además de requests concurrentes en el mismo servidor, hay fixtures que arrancan procesos Bun separados contra el mismo archivo SQLite. Se prueban races de active-service, idempotencia con la misma clave, payloads en conflicto y transitions competitivas.</div></details>
+          <details><summary>¿Qué demuestra CI?</summary><div class="detail-body">El workflow fija Bun 1.3.14, instala con el lockfile congelado, ejecuta typecheck, lint y todos los tests en cada push y pull request. CI valida el código; no implementa automáticamente un deploy SSH al VPS.</div></details>
+          <details><summary>¿Qué harías antes de producción?</summary><div class="detail-body">Añadiría autenticación/autorización, límite de body y tamaños de input, backup off-host con restore probado, métricas y alertas. Usaría Caddy y systemd en un VPS, mantendría SQLite en disco local y migraría a PostgreSQL antes de ejecutar varias réplicas en hosts distintos.</div></details>
+          <details><summary>¿Cuál es el principal límite del diseño?</summary><div class="detail-body">SQLite coordina muy bien un host, pero no es la elección para una topología distribuida. El límite está documentado explícitamente: cuando la necesidad pasa a ser multi-host o write-heavy, se conserva el contrato del repository y se cambia el backend a PostgreSQL.</div></details>
+          <details><summary>¿Por qué no incluiste autenticación?</summary><div class="detail-body">Porque el alcance del ejercicio se concentra en lifecycle, persistencia, API y concurrencia. No significa que una API pública de producción deba estar abierta. La autenticación debe estar en el gateway o en una capa de seguridad añadida antes de exponerla.</div></details>
+          <details><summary>¿Qué diferencia hay entre 400, 404, 409 y 503?</summary><div class="detail-body"><code>400</code> significa que la petición no es válida; <code>404</code>, que el recurso no existe; <code>409</code>, que la petición válida entra en conflicto con el estado actual; <code>503</code>, que SQLite no pudo completar por contención temporal. La distinción ayuda al cliente a decidir si corregir, consultar, no reintentar o reintentar.</div></details>
+          <details><summary>¿Qué cambiarías si el proyecto creciera?</summary><div class="detail-body">Mantendría la máquina de estados y el contrato del service, reemplazaría SQLite por PostgreSQL, añadiría un executor durable con una cola o scheduler, autenticación, observabilidad y una estrategia de deploy real. El límite está localizado gracias a la frontera del repository.</div></details>
+        </div>
+      </section>
+
+      <section id="referencias">
+        <div class="section-head">
+          <p class="kicker">11 · Referencias</p>
+          <h2>Enlaces para estudiar el código</h2>
+        </div>
+        <div class="grid-2">
+          <article class="panel"><h3>Proyecto revisado</h3><ul class="link-list"><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/tree/fc66fece08922f1193f27a47291eb2e6e8483a97" target="_blank" rel="noreferrer">HEAD fc66fec</a></li><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/src/deployment-service.ts" target="_blank" rel="noreferrer">DeploymentService</a></li><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/src/sqlite-deployment-repository.ts" target="_blank" rel="noreferrer">SQLite repository</a></li><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/src/server.ts" target="_blank" rel="noreferrer">HTTP server</a></li></ul></article>
+          <article class="panel"><h3>Pruebas y documentación</h3><ul class="link-list"><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/test/http-api.test.ts" target="_blank" rel="noreferrer">HTTP tests</a></li><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/test/sqlite-persistence.test.ts" target="_blank" rel="noreferrer">SQLite and process tests</a></li><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/.github/workflows/ci.yml" target="_blank" rel="noreferrer">CI workflow</a></li><li><a href="https://github.com/0bkevin/deploy-orchestrator-api/blob/fc66fece08922f1193f27a47291eb2e6e8483a97/docs/architecture.html" target="_blank" rel="noreferrer">Interactive architecture</a></li></ul></article>
+        </div>
+        <div class="callout blue" style="margin-top:1rem"><strong>Cómo estudiar:</strong> empieza por <code>types.ts</code>, sigue con <code>deployment-service.ts</code>, luego revisa <code>sqlite-deployment-repository.ts</code> y termina con <code>test/sqlite-persistence.test.ts</code>. Ese orden va del contrato al comportamiento y después a la garantía de persistencia.</div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-line"><span>Deploy Orchestrator · explicación técnica en español</span><span>Artifact generado para <a href="https://github.com/0bkevin/artifacts" target="_blank" rel="noreferrer">0bkevin/artifacts</a></span></div>
+  </footer>
+
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const themeButton = document.getElementById("themeToggle");
+      const savedTheme = localStorage.getItem("deploy-explainer-theme");
+      if (savedTheme === "dark") root.dataset.theme = "dark";
+      themeButton?.addEventListener("click", () => {
+        const dark = root.dataset.theme === "dark";
+        if (dark) delete root.dataset.theme;
+        else root.dataset.theme = "dark";
+        localStorage.setItem("deploy-explainer-theme", dark ? "light" : "dark");
+      });
+
+      const tabs = [...document.querySelectorAll("[role=tab]")];
+      const panels = [...document.querySelectorAll("[role=tabpanel]")];
+      tabs.forEach((tab) => tab.addEventListener("click", () => {
+        tabs.forEach((candidate) => candidate.setAttribute("aria-selected", String(candidate === tab)));
+        panels.forEach((panel) => { panel.hidden = panel.id !== tab.getAttribute("aria-controls"); });
+      }));
+
+      const links = [...document.querySelectorAll(".section-nav a")];
+      const sections = links.map((link) => document.querySelector(link.getAttribute("href"))).filter(Boolean);
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        links.forEach((link) => link.classList.toggle("active", link.getAttribute("href") === `#${visible.target.id}`));
+      }, { rootMargin: "-16% 0px -70% 0px", threshold: [0, .2, .6] });
+      sections.forEach((section) => observer.observe(section));
+    })();
+  </script>
+</body>
+</html>
